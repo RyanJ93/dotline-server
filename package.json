@@ -1,0 +1,31 @@
+{
+    "name": "dotline-server",
+    "version": "0.0.1",
+    "description": "",
+    "main": "index.js",
+    "type": "module",
+    "engines": {
+        "node": ">=18"
+    },
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "start": "node index.js"
+    },
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+        "@sentry/node": "^7.38.0",
+        "@sentry/tracing": "^7.38.0",
+        "axios": "^1.3.4",
+        "cassandra-driver": "^4.6.4",
+        "express": ">=5.0.0-beta.1",
+        "express-busboy": "^9.0.0",
+        "json5": "^2.2.3",
+        "ua-parser-js": "^1.0.33",
+        "winston": "^3.8.2",
+        "winston-transport-sentry-node": "^2.7.0"
+    },
+    "devDependencies": {
+        "eslint": "^8.34.0"
+    }
+}
