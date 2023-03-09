@@ -34,9 +34,18 @@ class UserController extends Controller {
     async login(){
         const userLoginHTTPForm = new UserLoginHTTPForm(), userService = new UserService();
         userLoginHTTPForm.validate(this._request.body);
-        const { username, password } = this._request.body;
-        const user = await userService.authenticateWithCredentials(username, password);
-        const accessToken = await userService.generateAccessToken(user, this._request);
+        let { username, password } = this._request.body, user = null, accessToken = null;
+        if ( typeof this._request.accessToken === 'string' && this._request.accessToken !== '' ){
+            const accessTokenService = await AccessTokenService.makeFromAccessToken(this._request.accessToken);
+            if ( accessTokenService !== null ){
+                accessToken = accessTokenService.getAccessToken();
+                user = accessToken.getUser();
+            }
+        }
+        if ( user === null ){
+            user = await userService.authenticateWithCredentials(username, password);
+            accessToken = await userService.generateAccessToken(user, this._request);
+        }
         this._sendSuccessResponse(200, 'SUCCESS', {
             accessToken: accessToken,
             user: user

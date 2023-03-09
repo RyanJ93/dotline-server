@@ -7,12 +7,29 @@ import Injector from '../facades/Injector.js';
 import Service from './Service.js';
 
 class AccessTokenService extends Service {
-    #accessTokenRepository;
+    static async makeFromAccessToken(accessTokenString){
+        const accessTokenRepository = Injector.inject('AccessTokenRepository');
+        const accessToken = await accessTokenRepository.getAccessToken(accessTokenString);
+        return accessToken === null ? null : new AccessTokenService(accessToken);
+    }
 
-    constructor(){
+    #accessTokenRepository;
+    #accessToken = null;
+
+    constructor(accessToken = null){
         super();
 
         this.#accessTokenRepository = Injector.inject('AccessTokenRepository');
+        this.setAccessToken(accessToken);
+    }
+
+    setAccessToken(accessToken){
+        this.#accessToken = accessToken;
+        return this;
+    }
+
+    getAccessToken(){
+        return this.#accessToken;
     }
 
     generateAccessToken(user, clientTrackingInfo){
