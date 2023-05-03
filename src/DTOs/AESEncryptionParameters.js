@@ -1,14 +1,56 @@
 'use strict';
 
-import UDTImplementation from './UDTImplementation.js';
+import IllegalArgumentException from '../exceptions/IllegalArgumentException.js';
+import AESStaticParameters from './AESStaticParameters.js';
 
-class AESEncryptionParameters extends UDTImplementation {
+/**
+ * @typedef AESEncryptionParametersUDTProperties
+ *
+ * @property {number} key_length
+ * @property {string} mode
+ * @property {string} iv
+ */
+
+/**
+ * @typedef AESEncryptionParametersProperties
+ *
+ * @property {number} keyLength
+ * @property {string} mode
+ * @property {string} iv
+ */
+
+class AESEncryptionParameters extends AESStaticParameters {
+    /**
+     * Generates an instance of this class based on the given properties obtained from an UDT object from the database.
+     *
+     * @param {AESEncryptionParametersUDTProperties} properties
+     *
+     * @returns {AESEncryptionParameters}
+     *
+     * @throws {IllegalArgumentException} If an invalid properties object is given.
+     */
     static makeFromUDT(properties){
+        if ( properties === null || typeof properties !== 'object' ){
+            throw new IllegalArgumentException('Invalid properties object.');
+        }
         properties.keyLength = properties.key_length;
         return new AESEncryptionParameters(properties);
     }
 
+    /**
+     * Generates an instance of this class based on the fields sent thought a given HTTP request.
+     *
+     * @param {Request} request
+     * @param {string} [prefix=""]
+     *
+     * @returns {AESEncryptionParameters}
+     *
+     * @throws {IllegalArgumentException} If an invalid prefix is given.
+     */
     static makeFromHTTPRequest(request, prefix = ''){
+        if ( prefix === null || typeof prefix !== 'string' ){
+            throw new IllegalArgumentException('Invalid prefix.');
+        }
         return new AESEncryptionParameters({
             keyLength: parseInt(request.body[prefix + 'KeyLength']),
             mode: request.body[prefix + 'Mode'],
@@ -16,44 +58,51 @@ class AESEncryptionParameters extends UDTImplementation {
         });
     }
 
-    #keyLength;
-    #mode;
+    /**
+     * @type {string}
+     */
     #iv;
 
+    /**
+     * The class constructor.
+     *
+     * @param {AESEncryptionParametersProperties} properties
+     */
     constructor(properties){
         super(properties);
 
-        this.#keyLength = properties.keyLength;
-        this.#mode = properties.mode;
         this.#iv = properties.iv;
     }
 
-    getKeyLength(){
-        return this.#keyLength;
-    }
-
-    getMode(){
-        return this.#mode;
-    }
-
+    /**
+     * Returns the IV used in AES encryption.
+     *
+     * @returns {string}
+     */
     getIV(){
         return this.#iv;
     }
 
+    /**
+     * Returns a JSON serializable representation of this class.
+     *
+     * @returns {AESEncryptionParametersProperties}
+     */
     toJSON(){
-        return {
-            keyLength: this.#keyLength,
-            mode: this.#mode,
-            iv: this.#iv
-        };
+        const JSONObject = super.toJSON();
+        JSONObject.iv = this.#iv;
+        return JSONObject;
     }
 
+    /**
+     * Returns a database serializable representation of this class.
+     *
+     * @returns {AESEncryptionParametersUDTProperties}
+     */
     toUDT(){
-        return {
-            key_length: this.#keyLength,
-            mode: this.#mode,
-            iv: this.#iv
-        };
+        const UDTObject = super.toUDT();
+        UDTObject.iv = this.#iv;
+        return UDTObject;
     }
 }
 

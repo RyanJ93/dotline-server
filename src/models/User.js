@@ -2,15 +2,18 @@
 
 import AESEncryptionParameters from '../DTOs/AESEncryptionParameters.js';
 import PasswordCocktail from '../DTOs/PasswordCocktail.js';
-import Model from './Model.js';
+import SearchEnabledModel from './SearchEnabledModel.js';
 
-class User extends Model {
+class User extends SearchEnabledModel {
     constructor(){
         super();
 
         this._mapping = {
             hiddenFields: ['password', 'createdAt', 'updatedAt'],
             tableName: 'users',
+            searchIndex: {
+                username: { tableName: 'user_search_index', referenceFields: { user_id: 'id' } }
+            },
             keys: ['id'],
             fields: {
                 RSAPrivateKeyEncryptionParameters: { name: 'rsa_private_key_encryption_parameters', UDTImplementation: AESEncryptionParameters },
@@ -105,6 +108,15 @@ class User extends Model {
 
     getUpdatedAt(){
         return this._attributes.updatedAt ?? null;
+    }
+
+    toJSON(withPrivateKey = false){
+        const JSONObject = super.toJSON();
+        if ( withPrivateKey !== true ){
+            delete JSONObject.RSAPrivateKeyEncryptionParameters;
+            delete JSONObject.RSAPrivateKey;
+        }
+        return JSONObject;
     }
 }
 

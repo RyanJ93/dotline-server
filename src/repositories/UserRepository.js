@@ -16,8 +16,30 @@ class UserRepository extends Repository {
         return user;
     }
 
+    async updateLastAccess(user){
+        user.setLastAccess(new Date());
+        await user.save();
+    }
+
     getUserByUsername(username){
         return User.findOne({ username: username });
+    }
+
+    getMultipleUser(userIDList){
+        return User.find({ id: userIDList });
+    }
+
+    async searchByUsername(username){
+        return await User.search(username, 'username');
+    }
+
+    /**
+     *
+     * @param id
+     * @returns {Promise<?User>}
+     */
+    async findOne(id){
+        return await User.findOne({ id: id });
     }
 }
 

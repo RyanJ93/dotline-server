@@ -1,10 +1,13 @@
 'use strict';
 
-import Geolocation from '../DTOs/Geolocation.js';
+import GeoLocation from '../DTOs/GeoLocation.js';
 import Model from './Model.js';
 import User from './User.js';
 
 class AccessToken extends Model {
+    /**
+     * The class constructor.
+     */
     constructor(){
         super();
 
@@ -14,7 +17,7 @@ class AccessToken extends Model {
             hiddenFields: ['user'],
             fields: {
                 user: { name: 'user_id', relation: { model: User, mapping: { user_id: { foreign: 'id', method: 'getID' } }} },
-                location: { name: 'location', UDTImplementation: Geolocation },
+                location: { name: 'location', UDTImplementation: GeoLocation },
                 browserName: { name: 'browser_name', type: 'string' },
                 accessToken: { name: 'access_token', type: 'string' },
                 firstAccess: { name: 'first_access', type: 'date' },

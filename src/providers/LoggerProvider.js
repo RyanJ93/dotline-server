@@ -43,13 +43,14 @@ class LoggerProvider extends Provider {
      * @returns {winston.Logger}
      */
     static #setupLogger(){
-        const { combine, timestamp, printf } = winston.format, { debug } = Config.getConfig();
+        const { combine, timestamp, printf, errors } = winston.format, { debug } = Config.getConfig();
         return winston.createLogger({
             transports: LoggerProvider.#getLogTransports(),
             level: ( debug === true ? 'silly' : 'info' ),
-            format: combine(timestamp(), printf(({ level, message, label, timestamp }) => {
+            format: combine(errors({ stack: true }), timestamp(), printf(({ level, message, label, timestamp, stack }) => {
                 label = typeof label === 'string' ? ( ' [' + label + ']' ) : '';
-                return `${timestamp}${label} ${level}: ${message}`;
+                stack = typeof stack === 'string' ? stack : '';
+                return `${timestamp}${label} ${level}: ${message} ${stack}`;
             })),
             exitOnError: false
         });

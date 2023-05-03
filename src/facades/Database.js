@@ -22,9 +22,22 @@ class Database extends Facade {
      *
      * @returns {Promise<any[]>}
      */
-    static query(query, params = [], options = {}){
+    static async query(query, params = [], options = {}){
         Object.assign(options, { prepare: true });
-        return Database.getConnection().execute(query, params, options);
+        return await Database.getConnection().execute(query, params, options);
+    }
+
+    /**
+     * Runs multiple queries as a single batch.
+     *
+     * @param {Object[]} queries
+     * @param {Object} [options={}]
+     *
+     * @returns {Promise<any[]>}
+     */
+    static async batch(queries, options = {}){
+        Object.assign(options, { prepare: true });
+        return await Database.getConnection().batch(queries, options);
     }
 }
 

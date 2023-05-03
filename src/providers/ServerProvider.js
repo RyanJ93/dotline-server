@@ -1,9 +1,20 @@
 'use strict';
 
+import UserConversationStatusWSActionController from '../controllers/ws/UserConversationStatusWSActionController.js';
+import CheckOnlineUserWSActionController from '../controllers/ws/CheckOnlineUserWSActionController.js';
+import WebSocketServerManagerInjector from '../services/injectors/WebSocketServerManagerInjector.js';
+import AuthenticateWSActionController from '../controllers/ws/AuthenticateWSActionController.js';
 import AuthenticatedMiddleware from '../middlewares/AuthenticatedMiddleware.js';
+import EventBrokerInjector from '../services/injectors/EventBrokerInjector.js';
 import ErrorHandlerMiddleware from '../middlewares/ErrorHandlerMiddleware.js';
+import ConversationController from '../controllers/ConversationController.js';
+import WebSocketServerManager from '../support/WebSocketServerManager.js';
+import MessageController from '../controllers/MessageController.js';
 import UserController from '../controllers/UserController.js';
+import InjectionManager from '../support/InjectionManager.js';
+import WebSocketRouter from '../support/WebSocketRouter.js';
 import Config from '../facades/Config.js';
+import { WebSocketServer } from 'ws';
 import Provider from './Provider.js';
 import bb from 'express-busboy';
 import express from 'express';
@@ -18,13 +29,48 @@ class ServerProvider extends Provider {
         const APIRouter = new express.Router();
         bb.extend(app);
         APIRouter.use(AuthenticatedMiddleware.getClosure());
+        APIRouter.delete('/conversation/:conversationID/message/:messageID/delete', MessageController.getClosure('delete'));
+        APIRouter.patch('/conversation/:conversationID/message/:messageID/edit', MessageController.getClosure('edit'));
+        APIRouter.delete('/conversation/:conversationID/delete', ConversationController.getClosure('delete'));
+        APIRouter.post('/conversation/:conversationID/message/send', MessageController.getClosure('send'));
+        APIRouter.get('/conversation/:conversationID/message/list', MessageController.getClosure('list'));
+        APIRouter.get('/conversation/:conversationID/get', ConversationController.getClosure('get'));
         APIRouter.get('/user/verify-username', UserController.getClosure('verifyUsername'));
+        APIRouter.post('/conversation/create', ConversationController.getClosure('create'));
+        APIRouter.get('/conversation/stats', ConversationController.getClosure('stats'));
+        APIRouter.get('/conversation/list', ConversationController.getClosure('list'));
         APIRouter.post('/user/signup', UserController.getClosure('signup'));
-        APIRouter.post('/user/login', UserController.getClosure('login'));
+        APIRouter.get('/user/search', UserController.getClosure('search'));
         APIRouter.get('/user/logout', UserController.getClosure('logout'));
+        APIRouter.post('/user/login', UserController.getClosure('login'));
         APIRouter.get('/user/info', UserController.getClosure('info'));
         APIRouter.use(ErrorHandlerMiddleware.getClosure());
         app.use('/api', APIRouter);
+    }
+
+    /**
+     *
+     *
+     * @returns {WebSocketRouter}
+     */
+    static #setupWSRouter(){
+        const webSocketRouter = new WebSocketRouter();
+        webSocketRouter.addAction('setTypingStatus', UserConversationStatusWSActionController.getClosure('setTypingStatus'));
+        webSocketRouter.addAction('checkOnlineUser', CheckOnlineUserWSActionController.getClosure('checkOnlineUser'));
+        webSocketRouter.addAction('authenticate', AuthenticateWSActionController.getClosure('authenticate'));
+        return webSocketRouter;
+    }
+
+    /**
+     * Instantiates the WebSocket server on top of the HTTP server.
+     *
+     * @param {Server} server
+     */
+    static #setupWebSocketServer(server){
+        const webSocketServerManager = new WebSocketServerManager(new WebSocketServer({ server }), ServerProvider.#setupWSRouter());
+        const webSocketServerManagerInjector = new WebSocketServerManagerInjector(webSocketServerManager);
+        InjectionManager.getInstance().register('WebSocketServerManager', webSocketServerManagerInjector);
+        InjectionManager.getInstance().register('EventBroker', new EventBrokerInjector());
     }
 
     /**
@@ -37,7 +83,8 @@ class ServerProvider extends Provider {
         ServerProvider.#setupAPIRoutes(app);
         process.on('applicationReady', () => {
             console.log('Listening on port ' + port);
-            app.listen(port);
+            const server = app.listen(port);
+            ServerProvider.#setupWebSocketServer(server);
         });
     }
 

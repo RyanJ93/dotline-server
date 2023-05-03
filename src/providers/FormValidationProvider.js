@@ -4,6 +4,7 @@ import NotEmptyStringFormValidationRule from '../forms/validationRules/NotEmptyS
 import FormValidationRuleFactoryInjector from '../services/injectors/FormValidationRuleFactoryInjector.js';
 import BooleanFormValidationRule from '../forms/validationRules/BooleanFormValidationRule.js';
 import IntegerFormValidationRule from '../forms/validationRules/IntegerFormValidationRule.js';
+import ArrayFormValidationRule from '../forms/validationRules/ArrayFormValidationRule.js';
 import DateFormValidationRule from '../forms/validationRules/DateFormValidationRule.js';
 import JSONFormValidationRule from '../forms/validationRules/JSONFormValidationRule.js';
 import FormValidationRuleFactory from '../factories/FormValidationRuleFactory.js';
@@ -20,6 +21,7 @@ class FormValidationProvider extends Provider {
         formValidationRuleFactory.registerFormValidationRule('non-empty-string', NotEmptyStringFormValidationRule);
         formValidationRuleFactory.registerFormValidationRule('boolean', BooleanFormValidationRule);
         formValidationRuleFactory.registerFormValidationRule('integer', IntegerFormValidationRule);
+        formValidationRuleFactory.registerFormValidationRule('array', ArrayFormValidationRule);
         formValidationRuleFactory.registerFormValidationRule('date', DateFormValidationRule);
         formValidationRuleFactory.registerFormValidationRule('json', JSONFormValidationRule);
     }

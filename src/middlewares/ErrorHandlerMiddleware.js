@@ -1,5 +1,6 @@
 'use strict';
 
+import EntityNotFoundException from '../exceptions/EntityNotFoundException.js';
 import InvalidInputException from '../exceptions/InvalidInputException.js';
 import HTTPException from '../exceptions/HTTPException.js';
 import Exception from '../exceptions/Exception.js';
@@ -48,6 +49,9 @@ class ErrorHandlerMiddleware {
         if ( error instanceof InvalidInputException ){
             responseProperties.errors = error.getErrorMessageBag().getAll();
             responseProperties.status = 'ERR_INVALID_FORM';
+        }else if ( error instanceof EntityNotFoundException ){
+            responseProperties.status = 'ERR_NOT_FOUND';
+            responseProperties.code = 404;
         }else if ( error instanceof HTTPException ){
             responseProperties.status = error.getStatus();
             responseProperties.code = error.getCode();

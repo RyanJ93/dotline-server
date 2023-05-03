@@ -3,6 +3,9 @@
 import HTTPForm from './HTTPForm.js';
 
 class UserVerifyUsernameHTTPForm extends HTTPForm {
+    /**
+     * The class constructor.
+     */
     constructor(){
         super();
 
