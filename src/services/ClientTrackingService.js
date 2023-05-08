@@ -8,6 +8,13 @@ import Service from './Service.js';
 import axios from 'axios';
 
 class ClientTrackingService extends Service {
+    /**
+     * Looks up location based on a given IP address.
+     *
+     * @param {string} ip
+     *
+     * @returns {Promise<?GeoLocation>}
+     */
     async #lookupGeoLocationByIP(ip){
         const url = 'http://ip-api.com/json/' + ip, locationComponents = [];
         const response = await axios.get(url);
@@ -31,10 +38,18 @@ class ClientTrackingService extends Service {
         });
     }
 
+    /**
+     * Returns client tracking information based on the given client request.
+     *
+     * @param {Request} HTTPRequest
+     *
+     * @returns {Promise<ClientTrackingInfo>}
+     */
     async getClientTrackingInfoByHTTPRequest(HTTPRequest){
         const auParser = new UAParser(HTTPRequest.headers['user-agent'] ?? '');
-        const browserName = ( auParser.getBrowser().name ?? '' ), OSName = ( auParser.getOS().name ?? '' );
         const location = await this.#lookupGeoLocationByIP(HTTPRequest.ip);
+        const browserName = ( auParser.getBrowser().name ?? '' );
+        const OSName = ( auParser.getOS().name ?? '' );
         return new ClientTrackingInfo({
             browserName: browserName,
             ip: HTTPRequest.ip,

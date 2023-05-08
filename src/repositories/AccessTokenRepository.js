@@ -33,6 +33,7 @@ class AccessTokenRepository extends CassandraRepository {
         const accessToken = new AccessToken();
         accessToken.setBrowserName(clientTrackingInfo.getBrowserName());
         accessToken.setLocation(clientTrackingInfo.getLocation());
+        accessToken.setOSName(clientTrackingInfo.getOSName());
         accessToken.setIP(clientTrackingInfo.getIP());
         accessToken.setAccessToken(accessTokenString);
         accessToken.setFirstAccess(new Date());
@@ -105,6 +106,22 @@ class AccessTokenRepository extends CassandraRepository {
             throw new IllegalArgumentException('Invalid access token.');
         }
         await accessToken.delete();
+    }
+
+    /**
+     * Returns all the active access tokens for a given user.
+     *
+     * @param {User} user
+     *
+     * @returns {Promise<AccessToken[]>}
+     *
+     * @throws {IllegalArgumentException} If an invalid user is given.
+     */
+    async listByUser(user){
+        if ( !( user instanceof User ) ){
+            throw new IllegalArgumentException('Invalid user.');
+        }
+        return await AccessToken.find({ user: user.getID() }, null, ['user']);
     }
 }
 

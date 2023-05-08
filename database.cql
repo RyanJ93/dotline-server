@@ -7,7 +7,7 @@ CREATE TYPE IF NOT EXISTS geo_location (latitude FLOAT, longitude FLOAT, text VA
 CREATE TYPE IF NOT EXISTS aes_static_parameters (mode ASCII, key_length SMALLINT);
 CREATE TYPE IF NOT EXISTS hmac_signing_parameters (hash_name ASCII);
 
-CREATE TABLE IF NOT EXISTS users (id TIMEUUID, username VARCHAR, password FROZEN<password_cocktail>, rsa_public_key ASCII, rsa_private_key ASCII, rsa_private_key_encryption_parameters FROZEN<aes_encryption_parameters>, last_access TIMESTAMP, created_at TIMESTAMP, updated_at TIMESTAMP, PRIMARY KEY (id));
+CREATE TABLE IF NOT EXISTS users (id TIMEUUID, username VARCHAR, surname VARCHAR, name VARCHAR, password FROZEN<password_cocktail>, rsa_public_key ASCII, rsa_private_key ASCII, rsa_private_key_encryption_parameters FROZEN<aes_encryption_parameters>, last_access TIMESTAMP, created_at TIMESTAMP, updated_at TIMESTAMP, PRIMARY KEY (id));
 -- CREATE CUSTOM INDEX IF NOT EXISTS users_by_username ON users (username) USING 'StorageAttachedIndex';
 CREATE CUSTOM INDEX IF NOT EXISTS users_by_username ON users (username) USING 'org.apache.cassandra.index.sasi.SASIIndex';
 
@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS access_tokens (access_token ASCII, user_id TIMEUUID, 
 -- CREATE CUSTOM INDEX IF NOT EXISTS access_tokens_by_user_id ON access_tokens (user_id) USING 'StorageAttachedIndex';
 CREATE CUSTOM INDEX IF NOT EXISTS access_tokens_by_user_id ON access_tokens (user_id) USING 'org.apache.cassandra.index.sasi.SASIIndex';
 
-CREATE TABLE IF NOT EXISTS user_settings (user_id TIMEUUID, locale ASCII, PRIMARY KEY (user_id));
+CREATE TABLE IF NOT EXISTS user_settings (user_id TIMEUUID, locale ASCII, theme ASCII, PRIMARY KEY (user_id));
 
 CREATE TABLE IF NOT EXISTS message_flags (conversation_id TIMEUUID, user_id TIMEUUID, flag ASCII, message_id TIMEUUID, PRIMARY KEY((conversation_id), user_id, flag, message_id)) WITH CLUSTERING ORDER BY (user_id ASC, flag ASC, message_id DESC);
 

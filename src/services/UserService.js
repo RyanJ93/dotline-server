@@ -187,16 +187,79 @@ class UserService extends Service {
         return await this.#userRepository.searchByUsername(username);
     }
 
+    /**
+     * Updates user's last access date.
+     *
+     * @returns {Promise<void>}
+     */
     async updateLastAccess(){
         await this.#userRepository.updateLastAccess(this.#user);
     }
 
+    /**
+     * Finds multiple user given their IDs.
+     *
+     * @param {string[]} userIDList
+     *
+     * @returns {Promise<User[]>}
+     *
+     * @throws {IllegalArgumentException} If an invalid user IDs array is given.
+     */
     async findMultipleUsers(userIDList){
+        if ( !Array.isArray(userIDList) ){
+            throw new IllegalArgumentException('Invalid user IDs.');
+        }
         return await this.#userRepository.getMultipleUser(userIDList);
     }
 
+    /**
+     * Finds and return the user matching the given ID.
+     *
+     * @param {string} id
+     *
+     * @returns {Promise<?User>}
+     *
+     * @throws {IllegalArgumentException} If an invalid ID is given.
+     */
     async find(id){
+        if ( id === '' || typeof id !== 'string' ){
+            throw new IllegalArgumentException('Invalid ID.');
+        }
         return this.#user = await this.#userRepository.findOne(id);
+    }
+
+    /**
+     * Updates the defined user.
+     *
+     * @param {string} username
+     * @param {string} name
+     * @param {string} surname
+     *
+     * @returns {Promise<void>}
+     *
+     * @throws {DuplicatedUsernameException} If the given username has already been taken.
+     * @throws {IllegalArgumentException} If an invalid username is given.
+     * @throws {IllegalArgumentException} If an invalid surname is given.
+     * @throws {IllegalArgumentException} If an invalid name is given.
+     */
+    async edit(username, name, surname){
+        if ( surname !== null && ( surname === '' || typeof surname !== 'string' ) ){
+            throw new IllegalArgumentException('Invalid surname.');
+        }
+        if ( name !== null && ( name === '' || typeof name !== 'string' ) ){
+            throw new IllegalArgumentException('Invalid name.');
+        }
+        if ( username === '' || typeof username !== 'string' ){
+            throw new IllegalArgumentException('Invalid username.');
+        }
+        await this.#userRepository.updateOptionalInfo(this.#user, surname, name);
+        if ( this.#user.getUsername() !== username ){
+            const otherUser = await this.#userRepository.getUserByUsername(surname);
+            if ( otherUser !== null ){
+                throw new DuplicatedUsernameException('Username already taken.');
+            }
+            await this.#userRepository.updateUsername(this.#user, username);
+        }
     }
 }
 

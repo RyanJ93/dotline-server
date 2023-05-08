@@ -6,6 +6,7 @@ import AccessTokenService from '../services/AccessTokenService.js';
 import UserSignupHTTPForm from '../forms/UserSignupHTTPForm.js';
 import UserSearchHTTPForm from '../forms/UserSearchHTTPForm.js';
 import UserLoginHTTPForm from '../forms/UserLoginHTTPForm.js';
+import UserEditHTTPForm from '../forms/UserEditHTTPForm.js';
 import UserService from '../services/UserService.js';
 import Controller from './Controller.js';
 
@@ -19,9 +20,7 @@ class UserController extends Controller {
         const userVerifyUsernameHTTPForm = new UserVerifyUsernameHTTPForm(), userService = new UserService();
         userVerifyUsernameHTTPForm.validate(this._request.query);
         const isUsernameAvailable = await userService.isUsernameAvailable(this._request.query.username);
-        this._sendSuccessResponse(200, 'SUCCESS', {
-            isUsernameAvailable: isUsernameAvailable
-        });
+        this._sendSuccessResponse(200, 'SUCCESS', { isUsernameAvailable: isUsernameAvailable });
     }
 
     /**
@@ -85,9 +84,7 @@ class UserController extends Controller {
      * @returns {Promise<void>}
      */
     async info(){
-        this._sendSuccessResponse(200, 'SUCCESS', {
-            user: this._request.authenticatedUser.toJSON(true)
-        });
+        this._sendSuccessResponse(200, 'SUCCESS', { user: this._request.authenticatedUser.toJSON(true) });
     }
 
     /**
@@ -99,9 +96,20 @@ class UserController extends Controller {
         const userSearchHTTPForm = new UserSearchHTTPForm(), userService = new UserService();
         userSearchHTTPForm.validate(this._request.query);
         const userList = await userService.searchByUsername(this._request.query.username);
-        this._sendSuccessResponse(200, 'SUCCESS', {
-            userList: userList
-        });
+        this._sendSuccessResponse(200, 'SUCCESS', { userList: userList });
+    }
+
+    /**
+     * Handles user edit requests.
+     *
+     * @returns {Promise<void>}
+     */
+    async edit(){
+        new UserEditHTTPForm().validate(this._request.body);
+        const userService = new UserService(this._request.authenticatedUser);
+        const { username, name, surname } = this._request.body;
+        await userService.edit(username, name, surname);
+        this._sendSuccessResponse(200, 'SUCCESS', { user: userService.getUser().toJSON(true) });
     }
 }
 

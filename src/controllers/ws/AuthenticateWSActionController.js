@@ -19,7 +19,7 @@ class AuthenticateWSActionController extends WSActionController {
         const webSocketServerManager = this._webSocketMessage.getWebSocketServerManager();
         const user = await new AccessTokenService().getUserByAccessToken(accessToken);
         await new UserService(user).updateLastAccess();
-        webSocketServerManager.registerClient(this._webSocketMessage.getClient(), user);
+        webSocketServerManager.registerClient(this._webSocketMessage.getClient(), user, accessToken);
     }
 }
 

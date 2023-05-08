@@ -228,14 +228,21 @@ class WebSocketServerManager extends Injectable {
     }
 
     /**
-     *
+     * Registers a client within the connection index.
      *
      * @param {Client} client
      * @param {User} user
+     * @param {string} accessToken
      *
      * @returns {WebSocketServerManager}
+     *
+     * @throws {IllegalArgumentException} If an invalid access token is given.
+     * @throws {IllegalArgumentException} If an invalid user is given.
      */
-    registerClient(client, user){
+    registerClient(client, user, accessToken){
+        if ( accessToken === '' || typeof accessToken !== 'string' ){
+            throw new IllegalArgumentException('Invalid access token.');
+        }
         if ( !( user instanceof User ) ){
             throw new IllegalArgumentException('Invalid user instance.');
         }
@@ -243,17 +250,20 @@ class WebSocketServerManager extends Injectable {
             this.#connectionIndex[user.getID()] = Object.create(null);
         }
         this.#connectionIndex[user.getID()][client.uuid] = client;
+        client.authenticatedUserAccessToken = accessToken;
         client.authenticatedUserID = user.getID();
         client.authenticatedUser = user;
         return this;
     }
 
     /**
-     *
+     * Checks if a given user has at least one open connection.
      *
      * @param {string} userID
      *
      * @returns {boolean}
+     *
+     * @throws {IllegalArgumentException} If an invalid user ID is given.
      */
     hasSession(userID){
         if ( userID === '' || typeof userID !== 'string' ){
@@ -303,6 +313,48 @@ class WebSocketServerManager extends Injectable {
             client.ping();
         });
         return this;
+    }
+
+    /**
+     * Disconnects all the connections belonging to a given user.
+     *
+     * @param {User} user
+     * @param {?string} [accessToken]
+     * @param {number} [code=1000]
+     * @param {string} [reason=""]
+     *
+     * @throws {IllegalArgumentException} If an invalid access token is given.
+     * @throws {IllegalArgumentException} If an invalid reason is given.
+     * @throws {IllegalArgumentException} If an invalid code is given.
+     * @throws {IllegalArgumentException} If an invalid user is given.
+     */
+    disconnectByUser(user, accessToken = null, code = 1000, reason = ''){
+        if ( accessToken !== null && ( accessToken === '' || typeof accessToken !== 'string' ) ){
+            throw new IllegalArgumentException('Invalid access token.');
+        }
+        if ( reason === '' || typeof reason !== 'string' ){
+            throw new IllegalArgumentException('Invalid reason.');
+        }
+        if ( code === null || isNaN(code) ){
+            throw new IllegalArgumentException('Invalid code.');
+        }
+        if ( !( user instanceof User ) ){
+            throw new IllegalArgumentException('Invalid user instance.');
+        }
+        const userID = user.getID();
+        if ( typeof this.#connectionIndex[userID] === 'object' ){
+            if ( typeof accessToken === 'string' ){
+                for ( const clientID in this.#connectionIndex[userID] ){
+                    if ( this.#connectionIndex[userID][clientID].authenticatedUserAccessToken === accessToken ){
+                        this.#connectionIndex[userID][clientID].close(code, reason);
+                    }
+                }
+            }else{
+                for ( const clientID in this.#connectionIndex[userID] ){
+                    this.#connectionIndex[userID][clientID].close(code, reason);
+                }
+            }
+        }
     }
 }
 

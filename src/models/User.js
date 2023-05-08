@@ -24,6 +24,8 @@ class User extends SearchEnabledModel {
                 createdAt: { name: 'created_at', type: 'date' },
                 updatedAt: { name: 'updated_at', type: 'date' },
                 username: { name: 'username', type: 'string' },
+                surname: { name: 'surname', type: 'string' },
+                name: { name: 'name', type: 'string' },
                 id: { name: 'id', type: 'timeuuid' }
             }
         };
@@ -108,6 +110,24 @@ class User extends SearchEnabledModel {
 
     getUpdatedAt(){
         return this._attributes.updatedAt ?? null;
+    }
+
+    setSurname(surname){
+        this._attributes.surname = surname;
+        return this;
+    }
+
+    getSurname(){
+        return this._attributes.surname ?? null;
+    }
+
+    setName(name){
+        this._attributes.name = name;
+        return this;
+    }
+
+    getName(){
+        return this._attributes.name ?? null;
     }
 
     toJSON(withPrivateKey = false){

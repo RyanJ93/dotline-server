@@ -18,10 +18,14 @@ class AccessTokenService extends Service {
      * @returns {Promise<?AccessTokenService>}
      */
     static async makeFromAccessToken(accessTokenString){
-        const accessTokenRepository = Injector.inject('AccessTokenRepository');
-        const accessToken = await accessTokenRepository.getAccessToken(accessTokenString);
+        const accessToken = await Injector.inject('AccessTokenRepository').getAccessToken(accessTokenString);
         return accessToken === null ? null : new AccessTokenService(accessToken);
     }
+
+    /**
+     * @type {WebSocketServerManager}
+     */
+    #webSocketServerManager;
 
     /**
      * @type {AccessTokenRepository}
@@ -41,6 +45,7 @@ class AccessTokenService extends Service {
     constructor(accessToken = null){
         super();
 
+        this.#webSocketServerManager = Injector.inject('WebSocketServerManager');
         this.#accessTokenRepository = Injector.inject('AccessTokenRepository');
         this.setAccessToken(accessToken);
     }
@@ -145,7 +150,53 @@ class AccessTokenService extends Service {
      * @returns {Promise<void>}
      */
     async delete(){
+        const user = this.#accessToken.getUser(), accessToken = this.#accessToken.getAccessToken();
+        this.#webSocketServerManager.disconnectByUser(user, accessToken, 1000, 'ERR_UNAUTHORIZED');
         await this.#accessTokenRepository.deleteAccessToken(this.#accessToken);
+    }
+
+    /**
+     * Returns all the active access tokens for a given user.
+     *
+     * @param {User} user
+     *
+     * @returns {Promise<AccessToken[]>}
+     *
+     * @throws {IllegalArgumentException} If an invalid user is given.
+     */
+    async listByUser(user){
+        if ( !( user instanceof User ) ){
+            throw new IllegalArgumentException('Invalid user.');
+        }
+        return await this.#accessTokenRepository.listByUser(user);
+    }
+
+    /**
+     * Deletes all the access tokens, except for the given one, associated to a given user.
+     *
+     * @param {User} user
+     * @param {string} currentAccessTokenString
+     *
+     * @returns {Promise<void>}
+     *
+     * @throws {IllegalArgumentException} If an invalid access token string is given.
+     * @throws {IllegalArgumentException} If an invalid user is given.
+     */
+    async deleteUserTokens(user, currentAccessTokenString){
+        if ( currentAccessTokenString === '' || typeof currentAccessTokenString !== 'string' ){
+            throw new IllegalArgumentException('Invalid access token string.');
+        }
+        if ( !( user instanceof User ) ){
+            throw new IllegalArgumentException('Invalid user.');
+        }
+        const accessTokenList = await this.#accessTokenRepository.listByUser(user), processes = [];
+        accessTokenList.forEach((accessToken) => {
+            if ( accessToken.getAccessToken() !== currentAccessTokenString ){
+                this.#webSocketServerManager.disconnectByUser(user, accessToken.getAccessToken(), 1000, 'ERR_UNAUTHORIZED');
+                processes.push(this.#accessTokenRepository.deleteAccessTokenByString(accessToken.getAccessToken()));
+            }
+        });
+        await Promise.all(processes);
     }
 }
 
