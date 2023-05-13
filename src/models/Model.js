@@ -264,6 +264,10 @@ class Model {
         return this;
     }
 
+    clone(){
+        return Object.assign(Object.create(Object.getPrototypeOf(this)), this);
+    }
+
     toJSON(){
         const exportedFields = {}, hiddenFields = this._mapping.hiddenFields ?? [];
         for ( const propertyName in this._attributes ){

@@ -54,7 +54,7 @@ class MessageController extends Controller {
     }
 
     /**
-     *
+     * Handles message delete requests.
      *
      * @returns {Promise<void>}
      */
@@ -63,6 +63,18 @@ class MessageController extends Controller {
         const messageService = await MessageService.makeFromEntity(user, conversationID, messageID);
         const deleteForEveryone = this._request.query.deleteForEveryone === '1';
         await ( deleteForEveryone ? messageService.delete() : messageService.deleteForUser(user) );
+        this._sendSuccessResponse();
+    }
+
+    /**
+     * Handles message mark as read requests.
+     *
+     * @returns {Promise<void>}
+     */
+    async markAsRead(){
+        const user = this._request.authenticatedUser, { conversationID, messageID } = this._request.params;
+        const messageService = await MessageService.makeFromEntity(user, conversationID, messageID);
+        await messageService.markAsRead(user);
         this._sendSuccessResponse();
     }
 }

@@ -31,8 +31,10 @@ class ServerProvider extends Provider {
         const APIRouter = new express.Router();
         bb.extend(app);
         APIRouter.use(AuthenticatedMiddleware.getClosure());
+        APIRouter.patch('/conversation/:conversationID/message/:messageID/mark-as-read', MessageController.getClosure('markAsRead'));
         APIRouter.delete('/conversation/:conversationID/message/:messageID/delete', MessageController.getClosure('delete'));
         APIRouter.patch('/conversation/:conversationID/message/:messageID/edit', MessageController.getClosure('edit'));
+        APIRouter.patch('/conversation/:conversationID/mark-as-read', MessageController.getClosure('markAsRead'));
         APIRouter.delete('/conversation/:conversationID/delete', ConversationController.getClosure('delete'));
         APIRouter.post('/conversation/:conversationID/message/send', MessageController.getClosure('send'));
         APIRouter.get('/conversation/:conversationID/message/list', MessageController.getClosure('list'));

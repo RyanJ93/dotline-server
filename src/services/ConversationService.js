@@ -347,6 +347,22 @@ class ConversationService extends Service {
         this._eventBroker.emit('conversationDelete', userIDList, this.#conversation.getID());
         this.#conversation = null;
     }
+
+    /**
+     * Marks every message contained in the conversation defined as read.
+     *
+     * @param {User} user
+     *
+     * @returns {Promise<void>}
+     *
+     * @throws {IllegalArgumentException} If and invalid user instance is given.
+     */
+    async markAsRead(user){
+        if ( !( user instanceof User ) ){
+            throw new IllegalArgumentException('Invalid user instance.');
+        }
+        await new MessageFlagService().removeConversationFlagsForUser(this.#conversation, user);
+    }
 }
 
 export default ConversationService;

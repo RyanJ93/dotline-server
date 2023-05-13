@@ -62,6 +62,13 @@ class ConversationController extends Controller {
         await ( deleteForEveryone ? conversationService.delete() : conversationService.deleteForUser(user) );
         this._sendSuccessResponse();
     }
+
+    async markAsRead(){
+        const conversationID = this._request.params.conversationID, user = this._request.authenticatedUser;
+        const conversationService = await ConversationService.makeFromEntity(conversationID, user);
+        await conversationService.markAsRead(user);
+        this._sendSuccessResponse();
+    }
 }
 
 export default ConversationController;

@@ -71,15 +71,23 @@ class MessageService extends Service {
     /**
      * Updates and ensures all the message related entities that must be processed for each conversation member.
      *
+     * @param {User} user
+     *
      * @returns {Promise<void>}
      */
-    async #processMemberRelatedEntities(){
+    async #processMemberRelatedEntities(user){
         // Create a list of fake users in order to provide a list of user ID.
-        const userList = Object.keys(this.#conversation.getMembers()).map((userID) => new User().setID(userID));
+        const relativeUserList = [], completeUserList = [];
+        Object.keys(this.#conversation.getMembers()).forEach((userID) => {
+            if ( userID !== user.getID().toString() ){
+                relativeUserList.push(new User().setID(userID));
+            }
+            completeUserList.push(new User().setID(userID));
+        });
         // Mark the message as "unread" for all the conversation's members.
-        await new MessageFlagService(this.#message).addMessageFlagsForMultipleUser([MessageFlagName.UNREAD], userList);
+        await new MessageFlagService(this.#message).addMessageFlagsForMultipleUser([MessageFlagName.UNREAD], relativeUserList);
         // Increment message counter for all the conversation's members.
-        await Promise.all(userList.map((user => new ConversationStatService(user).incrementCounter(this.#conversation))));
+        await Promise.all(completeUserList.map((user => new ConversationStatService(user).incrementCounter(this.#conversation))));
     }
 
     /**
@@ -106,7 +114,6 @@ class MessageService extends Service {
     #processCreatedMessageAttributes(){
         this.#message.addVirtualAttribute('conversationID', this.#message.getConversation().getID());
         this.#message.addVirtualAttribute('userID', this.#message.getUser().getID());
-        this.#message.addVirtualAttribute('read', false);
         this.#message.hideAttribute('conversation');
         this.#message.hideAttribute('user');
     }
@@ -254,11 +261,14 @@ class MessageService extends Service {
             throw new InvalidOperationException('Empty messages are not allowed.');
         }
         await new ConversationService(this.#conversation).ensureConversationMembers(true);
+        const otherMemberList = Object.keys(this.#conversation.getMembers()).filter((userID) => userID !== user.getID().toString());
         this.#message = await this.#messageRepository.create(this.#conversation, user, content, type, signature, encryptionIV);
+        this.#message.addVirtualAttribute('read', false);
+        await this.#processMemberRelatedEntities(user);
         this.#processCreatedMessageAttributes();
         // TODO: process attachments.
-        await this.#processMemberRelatedEntities();
-        this._eventBroker.emit('message', Object.keys(this.#conversation.getMembers()), this.#message);
+        this._eventBroker.emit('message', otherMemberList, this.#message);
+        this._eventBroker.emit('message', [user.getID().toString()], this.#message.addVirtualAttribute('read', true));
         return this.#message;
     }
 
@@ -291,7 +301,11 @@ class MessageService extends Service {
         //}
         await this.#messageRepository.edit(this.#message, content, signature, encryptionIV);
         this.#processCreatedMessageAttributes();
-        this._eventBroker.emit('messageEdit', Object.keys(this.#conversation.getMembers()), this.#message);
+        await Promise.all(Object.keys(this.#conversation.getMembers()).map(async (memberID) => {
+            const userMessage = this.#message.clone();
+            await this.#processMessageFlags(userMessage, new User().setID(memberID));
+            this._eventBroker.emit('messageEdit', [memberID], userMessage);
+        }));
         return this.#message;
     }
 
@@ -343,6 +357,24 @@ class MessageService extends Service {
      */
     async deleteConversationMessages(){
         await this.#messageRepository.deleteConversationMessages(this.#conversation);
+    }
+
+    /**
+     * Marks the message defined as read.
+     *
+     * @param {User} user
+     *
+     * @returns {Promise<void>}
+     *
+     * @throws {IllegalArgumentException} If and invalid user instance is given.
+     */
+    async markAsRead(user){
+        if ( !( user instanceof User ) ){
+            throw new IllegalArgumentException('Invalid user instance.');
+        }
+        await new MessageFlagService(this.#message).removeMessageFlagsForUser([MessageFlagName.UNREAD], user);
+        await this.#processMessageFlags( this.#message, user);
+        this._eventBroker.emit('messageEdit', [user.getID()], this.#message);
     }
 }
 
