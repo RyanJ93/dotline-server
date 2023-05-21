@@ -2,6 +2,10 @@
 
 import FormValidationRule from './FormValidationRule.js';
 
+/**
+ * @typedef {FormValidationRuleParams} JSONFormValidationRuleParams
+ */
+
 class JSONFormValidationRule extends FormValidationRule {
     /**
      * Returns the default error message to use whenever this validation rule fails.
@@ -15,11 +19,12 @@ class JSONFormValidationRule extends FormValidationRule {
     /**
      * Validates a given value.
      *
-     * @param {string} value
+     * @param {any} value
+     * @param {JSONFormValidationRuleParams} params
      *
      * @returns {boolean}
      */
-    validate(value){
+    validate(value, params){
         try{
             JSON.parse(value);
             return true;

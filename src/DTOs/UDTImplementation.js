@@ -5,7 +5,7 @@ import RuntimeException from '../exceptions/RuntimeException.js';
 
 class UDTImplementation {
     /**
-     *
+     * Generates an instance of this class based on the given properties obtained from an UDT object from the database.
      *
      * @param {Object} properties
      *
@@ -33,7 +33,7 @@ class UDTImplementation {
     }
 
     /**
-     *
+     * Returns a database serializable representation of this class.
      *
      * @returns {Object}
      *

@@ -10,8 +10,8 @@ class UserSettingsEditHTTPForm extends HTTPForm {
         super();
 
         this._mapping = {
-            locale: { rules: { ['non-empty-string']: 'You must provide a valid locale.' }, isRequired: true },
-            theme: { rules: { ['non-empty-string']: 'You must provide a valid theme.' }, isRequired: true }
+            locale: { rules: { ['non-empty-string']: { msg: 'You must provide a valid locale.' } }, isRequired: true },
+            theme: { rules: { ['non-empty-string']: { msg: 'You must provide a valid theme.' } }, isRequired: true }
         };
     }
 }

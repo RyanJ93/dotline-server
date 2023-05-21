@@ -2,6 +2,10 @@
 
 import FormValidationRule from './FormValidationRule.js';
 
+/**
+ * @typedef {FormValidationRuleParams} IntegerFormValidationRuleParams
+ */
+
 class IntegerFormValidationRule extends FormValidationRule {
     /**
      * Returns the default error message to use whenever this validation rule fails.
@@ -15,11 +19,12 @@ class IntegerFormValidationRule extends FormValidationRule {
     /**
      * Validates a given value.
      *
-     * @param {string} value
+     * @param {any} value
+     * @param {IntegerFormValidationRuleParams} params
      *
      * @returns {boolean}
      */
-    validate(value){
+    validate(value, params){
         return ( typeof value === 'number' && isNaN(value) ) || /[0-9]+/.test(value);
     }
 }

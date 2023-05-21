@@ -10,8 +10,8 @@ class MessageEditHTTPForm extends HTTPForm {
         super();
 
         this._mapping = {
-            encryptionIV: { rules: { ['non-empty-string']: 'You must provide a valid message encryption IV.' }, isRequired: true },
-            signature: { rules: { ['non-empty-string']: 'You must provide a valid message signature.' }, isRequired: true }
+            // encryptionIV: { rules: { ['non-empty-string']: { msg: 'You must provide a valid message encryption IV.' } }, isRequired: true },
+            // signature: { rules: { ['non-empty-string']: { msg: 'You must provide a valid message signature.' } }, isRequired: true }
         };
     }
 }

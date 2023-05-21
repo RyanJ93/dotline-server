@@ -5,6 +5,10 @@ import RuntimeException from '../../exceptions/RuntimeException.js';
 import Craftable from '../../factories/Craftable.js';
 
 /**
+ * @typedef {Object.<string, any>} FormValidationRuleParams
+ */
+
+/**
  * @abstract
  */
 /* abstract */ class FormValidationRule extends Craftable {
@@ -37,7 +41,8 @@ import Craftable from '../../factories/Craftable.js';
     /**
      * Validates a given value.
      *
-     * @param {string} value
+     * @param {any} value
+     * @param {FormValidationRuleParams} params
      *
      * @returns {boolean}
      *
@@ -45,7 +50,7 @@ import Craftable from '../../factories/Craftable.js';
      *
      * @abstract
      */
-    validate(value){
+    validate(value, params){
         throw new NotCallableException('This method cannot be callable, you must extend this class and override this method.');
     }
 }

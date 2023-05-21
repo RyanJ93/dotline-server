@@ -1,5 +1,6 @@
 CREATE KEYSPACE IF NOT EXISTS dotline WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};
 
+CREATE TYPE IF NOT EXISTS attachment (id UUID, filename VARCHAR, size INT, mimetype ASCII, signature ASCII, encryption_iv ASCII);
 CREATE TYPE IF NOT EXISTS conversation_member (encryption_key ASCII, signing_key ASCII, deleted_at TIMESTAMP);
 CREATE TYPE IF NOT EXISTS aes_encryption_parameters (iv ASCII, mode ASCII, key_length SMALLINT);
 CREATE TYPE IF NOT EXISTS password_cocktail (hash ASCII, salt ASCII, pepper ASCII, loop INT);
@@ -19,7 +20,7 @@ CREATE TABLE IF NOT EXISTS conversations (id TIMEUUID, name VARCHAR, encryption_
 -- CREATE CUSTOM INDEX IF NOT EXISTS conversations_by_member ON conversations (members) USING 'StorageAttachedIndex';
 CREATE CUSTOM INDEX IF NOT EXISTS conversations_by_member ON conversations (members) USING 'org.apache.cassandra.index.sasi.SASIIndex';
 
-CREATE TABLE IF NOT EXISTS messages (conversation_id TIMEUUID, id TIMEUUID, user_id TIMEUUID, signature ASCII, content ASCII, type ASCII, created_at TIMESTAMP, updated_at TIMESTAMP, is_edited BOOLEAN, encryption_iv ASCII, PRIMARY KEY ((conversation_id), id)) WITH CLUSTERING ORDER BY (id DESC);
+CREATE TABLE IF NOT EXISTS messages (conversation_id TIMEUUID, id TIMEUUID, user_id TIMEUUID, signature ASCII, content ASCII, type ASCII, created_at TIMESTAMP, updated_at TIMESTAMP, is_edited BOOLEAN, encryption_iv ASCII, attachments LIST<FROZEN<attachment>>, PRIMARY KEY ((conversation_id), id)) WITH CLUSTERING ORDER BY (id DESC);
 
 CREATE TABLE IF NOT EXISTS access_tokens (access_token ASCII, user_id TIMEUUID, first_access TIMESTAMP, last_access TIMESTAMP, location FROZEN<geo_location>, ip INET, browser_name VARCHAR, os_name VARCHAR, PRIMARY KEY(access_token));
 -- CREATE CUSTOM INDEX IF NOT EXISTS access_tokens_by_user_id ON access_tokens (user_id) USING 'StorageAttachedIndex';

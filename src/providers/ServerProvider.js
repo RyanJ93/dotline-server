@@ -20,6 +20,7 @@ import { WebSocketServer } from 'ws';
 import Provider from './Provider.js';
 import bb from 'express-busboy';
 import express from 'express';
+import AttachmentController from '../controllers/AttachmentController.js';
 
 class ServerProvider extends Provider {
     /**
@@ -29,8 +30,9 @@ class ServerProvider extends Provider {
      */
     static #setupAPIRoutes(app){
         const APIRouter = new express.Router();
-        bb.extend(app);
+        bb.extend(app, { upload: true, path: './storage/uploads' });
         APIRouter.use(AuthenticatedMiddleware.getClosure());
+        APIRouter.get('/conversation/:conversationID/message/:messageID/attachment/:attachmentID/get', AttachmentController.getClosure('get'));
         APIRouter.patch('/conversation/:conversationID/message/:messageID/mark-as-read', MessageController.getClosure('markAsRead'));
         APIRouter.delete('/conversation/:conversationID/message/:messageID/delete', MessageController.getClosure('delete'));
         APIRouter.patch('/conversation/:conversationID/message/:messageID/edit', MessageController.getClosure('edit'));

@@ -2,6 +2,10 @@
 
 import FormValidationRule from './FormValidationRule.js';
 
+/**
+ * @typedef {FormValidationRuleParams} BooleanFormValidationRuleParams
+ */
+
 class BooleanFormValidationRule extends FormValidationRule {
     /**
      * Returns the default error message to use whenever this validation rule fails.
@@ -15,11 +19,12 @@ class BooleanFormValidationRule extends FormValidationRule {
     /**
      * Validates a given value.
      *
-     * @param {string} value
+     * @param {any} value
+     * @param {BooleanFormValidationRuleParams} params
      *
      * @returns {boolean}
      */
-    validate(value){
+    validate(value, params){
         if ( value === true || value === false ){
             return true;
         }

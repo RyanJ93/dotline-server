@@ -7,6 +7,7 @@ import ConversationStatService from './ConversationStatService.js';
 import ConversationService from './ConversationService.js';
 import MessageFlagService from './MessageFlagService.js';
 import MessageFlagName from '../enum/MessageFlagName.js';
+import AttachmentService from './AttachmentService.js';
 import Conversation from '../models/Conversation.js';
 import MessageType from '../enum/MessageType.js';
 import Injector from '../facades/Injector.js';
@@ -224,9 +225,9 @@ class MessageService extends Service {
      * @param {User} user
      * @param {string} content
      * @param {string} type
-     * @param {string} signature
-     * @param {string} encryptionIV
-     * @param {string[]} attachments
+     * @param {?string} signature
+     * @param {?string} encryptionIV
+     * @param {UploadedAttachment[]} attachmentList
      *
      * @returns {Promise<Message>}
      *
@@ -238,35 +239,41 @@ class MessageService extends Service {
      * @throws {IllegalArgumentException} If an invalid message type is given.
      * @throws {InvalidOperationException} If the message is empty.
      */
-    async send(user, content, type, signature, encryptionIV, attachments = []){
+    async send(user, content, type, signature, encryptionIV, attachmentList = []){
         if ( Object.values(MessageType).indexOf(type) === -1 ){
             throw new IllegalArgumentException('Invalid or unsupported message type.');
         }
-        if ( encryptionIV === '' || typeof encryptionIV !== 'string' ){
-            throw new IllegalArgumentException('Invalid encryption IV.');
-        }
-        if ( signature === '' || typeof signature !== 'string' ){
-            throw new IllegalArgumentException('Invalid signature.');
+        if ( content !== '' ){
+            if ( encryptionIV === '' || typeof encryptionIV !== 'string' ){
+                throw new IllegalArgumentException('Invalid encryption IV.');
+            }
+            if ( signature === '' || typeof signature !== 'string' ){
+                throw new IllegalArgumentException('Invalid signature.');
+            }
         }
         if ( typeof content !== 'string' ){
             throw new IllegalArgumentException('Invalid content.');
         }
-        if ( !Array.isArray(attachments) ){
+        if ( !Array.isArray(attachmentList) ){
             throw new IllegalArgumentException('Invalid attachment list.');
         }
         if ( !( user instanceof User ) ){
             throw new IllegalArgumentException('Invalid user instance.');
         }
-        if ( content === '' && attachments.length === 0 ){
+        if ( content === '' && attachmentList.length === 0 ){
             throw new InvalidOperationException('Empty messages are not allowed.');
+        }
+        if ( content === '' ){
+            encryptionIV = signature = null;
         }
         await new ConversationService(this.#conversation).ensureConversationMembers(true);
         const otherMemberList = Object.keys(this.#conversation.getMembers()).filter((userID) => userID !== user.getID().toString());
         this.#message = await this.#messageRepository.create(this.#conversation, user, content, type, signature, encryptionIV);
+        const processedAttachmentList = await new AttachmentService(this.#message).processFileAttachments(attachmentList);
+        await this.#messageRepository.updateAttachments(this.#message, processedAttachmentList);
         this.#message.addVirtualAttribute('read', false);
         await this.#processMemberRelatedEntities(user);
         this.#processCreatedMessageAttributes();
-        // TODO: process attachments.
         this._eventBroker.emit('message', otherMemberList, this.#message);
         this._eventBroker.emit('message', [user.getID().toString()], this.#message.addVirtualAttribute('read', true));
         return this.#message;
@@ -276,8 +283,8 @@ class MessageService extends Service {
      * Edits the defined message replacing its content with the given one.
      *
      * @param {string} content
-     * @param {string} signature
-     * @param {string} encryptionIV
+     * @param {?string} signature
+     * @param {?string} encryptionIV
      *
      * @returns {Promise<?Message>}
      *
@@ -287,18 +294,23 @@ class MessageService extends Service {
      * @throws {InvalidOperationException} If the message is empty.
      */
     async edit(content, signature, encryptionIV){
-        if ( encryptionIV === '' || typeof encryptionIV !== 'string' ){
-            throw new IllegalArgumentException('Invalid encryption IV.');
-        }
-        if ( signature === '' || typeof signature !== 'string' ){
-            throw new IllegalArgumentException('Invalid signature.');
-        }
         if ( typeof content !== 'string' ){
             throw new IllegalArgumentException('Invalid content.');
         }
-        //if ( content === '' && this.#message.getAttachments().length === 0 ){
-        //    throw new InvalidOperationException('Empty messages are not allowed.');
-        //}
+        if ( content !== '' ){
+            if ( encryptionIV === '' || typeof encryptionIV !== 'string' ){
+                throw new IllegalArgumentException('Invalid encryption IV.');
+            }
+            if ( signature === '' || typeof signature !== 'string' ){
+                throw new IllegalArgumentException('Invalid signature.');
+            }
+        }
+        if ( content === '' && this.#message.getAttachments().length === 0 ){
+            throw new InvalidOperationException('Empty messages are not allowed.');
+        }
+        if ( content === '' ){
+            encryptionIV = signature = null;
+        }
         await this.#messageRepository.edit(this.#message, content, signature, encryptionIV);
         this.#processCreatedMessageAttributes();
         await Promise.all(Object.keys(this.#conversation.getMembers()).map(async (memberID) => {
@@ -344,6 +356,7 @@ class MessageService extends Service {
         await new MessageFlagService(this.#message).removeMessageFlagsForMultipleUser(Object.values(MessageFlagName), userList);
         await Promise.all(userList.map((user => new ConversationStatService(user).decrementCounter(this.#conversation))));
         const memberList = Object.keys(this.#conversation.getMembers());
+        await new AttachmentService(this.#message).removeAttachments();
         await this.#messageRepository.delete(this.#message);
         // TODO: process attachments.
         this._eventBroker.emit('messageDelete', memberList, this.#message.getID(), this.#conversation.getID());
@@ -356,6 +369,7 @@ class MessageService extends Service {
      * @returns {Promise<void>}
      */
     async deleteConversationMessages(){
+        await new AttachmentService().removeConversationAttachments(this.#conversation);
         await this.#messageRepository.deleteConversationMessages(this.#conversation);
     }
 

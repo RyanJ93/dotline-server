@@ -60,8 +60,8 @@ class MessageRepository extends CassandraRepository {
      * @param {User} user
      * @param {string} content
      * @param {string} type
-     * @param {string} signature
-     * @param {string} encryptionIV
+     * @param {?string} signature
+     * @param {?string} encryptionIV
      *
      * @returns {Promise<Message>}
      *
@@ -76,30 +76,33 @@ class MessageRepository extends CassandraRepository {
         if ( !( conversation instanceof Conversation ) ){
             throw new IllegalArgumentException('Invalid conversation instance.');
         }
-        if ( encryptionIV === '' || typeof encryptionIV !== 'string' ){
-            throw new IllegalArgumentException('Invalid encryption IV.');
-        }
-        if ( signature === '' || typeof signature !== 'string' ){
-            throw new IllegalArgumentException('Invalid signature.');
+        if ( content !== '' ){
+            if ( encryptionIV === '' || typeof encryptionIV !== 'string' ){
+                throw new IllegalArgumentException('Invalid encryption IV.');
+            }
+            if ( signature === '' || typeof signature !== 'string' ){
+                throw new IllegalArgumentException('Invalid signature.');
+            }
         }
         if ( Object.values(MessageType).indexOf(type) === -1 ){
             throw new IllegalArgumentException('Invalid type.');
         }
-        if ( content === '' || typeof content !== 'string' ){
+        if ( typeof content !== 'string' ){
             throw new IllegalArgumentException('Invalid content.');
         }
         if ( !( user instanceof User ) ){
             throw new IllegalArgumentException('Invalid user instance.');
         }
         const message = new Message();
+        message.setEncryptionIV(( content === '' ? null : encryptionIV ));
+        message.setSignature(( content === '' ? null : signature ));
         message.setID(cassandra.types.TimeUuid.now());
-        message.setEncryptionIV(encryptionIV);
         message.setConversation(conversation);
         message.setCreatedAt(new Date());
         message.setUpdatedAt(new Date());
-        message.setSignature(signature);
-        message.setIsEdited(false);
         message.setContent(content);
+        message.setAttachments([]);
+        message.setIsEdited(false);
         message.setType(type);
         message.setUser(user);
         await message.save();
@@ -152,8 +155,8 @@ class MessageRepository extends CassandraRepository {
      *
      * @param {Message} message
      * @param {string} content
-     * @param {string} signature
-     * @param {string} encryptionIV
+     * @param {?string} signature
+     * @param {?string} encryptionIV
      *
      * @returns {Promise<void>}
      *
@@ -166,18 +169,20 @@ class MessageRepository extends CassandraRepository {
         if ( !( message instanceof Message ) ){
             throw new IllegalArgumentException('Invalid message instance.');
         }
-        if ( encryptionIV === '' || typeof encryptionIV !== 'string' ){
-            throw new IllegalArgumentException('Invalid encryption IV.');
+        if ( content !== '' ){
+            if ( encryptionIV === '' || typeof encryptionIV !== 'string' ){
+                throw new IllegalArgumentException('Invalid encryption IV.');
+            }
+            if ( signature === '' || typeof signature !== 'string' ){
+                throw new IllegalArgumentException('Invalid signature.');
+            }
         }
-        if ( signature === '' || typeof signature !== 'string' ){
-            throw new IllegalArgumentException('Invalid signature.');
-        }
-        if ( content === '' || typeof content !== 'string' ){
+        if ( typeof content !== 'string' ){
             throw new IllegalArgumentException('Invalid content.');
         }
-        message.setEncryptionIV(encryptionIV);
+        message.setEncryptionIV(( content === '' ? null : encryptionIV ));
+        message.setSignature(( content === '' ? null : signature ));
         message.setUpdatedAt(new Date());
-        message.setContent(content);
         message.setContent(content);
         message.setIsEdited(true);
         await message.save();
@@ -213,6 +218,28 @@ class MessageRepository extends CassandraRepository {
             throw new IllegalArgumentException('Invalid conversation instance.');
         }
         await Message.findAndDelete({ conversation: conversation.getID() });
+    }
+
+    /**
+     * Updates message's attachments.
+     *
+     * @param {Message} message
+     * @param {Attachment[]} attachmentList
+     *
+     * @returns {Promise<void>}
+     *
+     * @throws {IllegalArgumentException} If an invalid message instance is given.
+     * @throws {IllegalArgumentException} If an invalid attachment list is given.
+     */
+    async updateAttachments(message, attachmentList){
+        if ( !( message instanceof Message ) ){
+            throw new IllegalArgumentException('Invalid message instance.');
+        }
+        if ( !Array.isArray(attachmentList) ){
+            throw new IllegalArgumentException('Invalid attachment list.');
+        }
+        message.setAttachments(attachmentList.map((attachment) => attachment.toUDT()));
+        await message.save();
     }
 }
 

@@ -2,6 +2,8 @@
 
 import NotEmptyStringFormValidationRule from '../forms/validationRules/NotEmptyStringFormValidationRule.js';
 import FormValidationRuleFactoryInjector from '../services/injectors/FormValidationRuleFactoryInjector.js';
+import ArrayLengthFormValidationRule from '../forms/validationRules/ArrayLengthFormValidationRule.js';
+import FileSizeFormValidationRule from '../forms/validationRules/FileSizeFormValidationRule.js';
 import BooleanFormValidationRule from '../forms/validationRules/BooleanFormValidationRule.js';
 import IntegerFormValidationRule from '../forms/validationRules/IntegerFormValidationRule.js';
 import ArrayFormValidationRule from '../forms/validationRules/ArrayFormValidationRule.js';
@@ -19,6 +21,8 @@ class FormValidationProvider extends Provider {
      */
     static #registerFormValidationRules(formValidationRuleFactory){
         formValidationRuleFactory.registerFormValidationRule('non-empty-string', NotEmptyStringFormValidationRule);
+        formValidationRuleFactory.registerFormValidationRule('array-length', ArrayLengthFormValidationRule);
+        formValidationRuleFactory.registerFormValidationRule('file-size', FileSizeFormValidationRule);
         formValidationRuleFactory.registerFormValidationRule('boolean', BooleanFormValidationRule);
         formValidationRuleFactory.registerFormValidationRule('integer', IntegerFormValidationRule);
         formValidationRuleFactory.registerFormValidationRule('array', ArrayFormValidationRule);

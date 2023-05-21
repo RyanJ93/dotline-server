@@ -10,9 +10,9 @@ class ConversationCreateHTTPForm extends HTTPForm {
         super();
 
         this._mapping = {
-            conversationMemberPlaceholderList: { rules: { ['array']: 'You must provide a valid conversation member placeholder list.' }, isRequired: true },
-            encryptionKeyLength: { rules: { ['integer']: 'You must provide a valid encryption key length.' }, isRequired: true },
-            encryptionMode: { rules: { ['non-empty-string']: 'You must provide a valid encryption mode.' }, isRequired: true },
+            conversationMemberPlaceholderList: { rules: { ['array']: { msg: 'You must provide a valid conversation member placeholder list.' } }, isRequired: true },
+            encryptionKeyLength: { rules: { ['integer']: { msg: 'You must provide a valid encryption key length.' } }, isRequired: true },
+            encryptionMode: { rules: { ['non-empty-string']: { msg: 'You must provide a valid encryption mode.' } }, isRequired: true },
         };
     }
 }

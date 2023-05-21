@@ -15,6 +15,7 @@ class Message extends Model {
                 conversation: { name: 'conversation_id', relation: { model: Conversation, mapping: { conversation_id: { foreign: 'id', method: 'getID' } }} },
                 user: { name: 'user_id', relation: { model: User, mapping: { user_id: { foreign: 'id', method: 'getID' } }} },
                 encryptionIV: { name: 'encryption_iv', type: 'string' },
+                attachments: { name: 'attachments', type: 'list' },
                 signature: { name: 'signature', type: 'string' },
                 isEdited: { name: 'is_edited', type: 'boolean' },
                 createdAt: { name: 'created_at', type: 'date' },
@@ -33,6 +34,15 @@ class Message extends Model {
 
     getEncryptionIV(){
         return this._attributes.encryptionIV ?? null;
+    }
+
+    setAttachments(attachments){
+        this._attributes.attachments = attachments;
+        return this;
+    }
+
+    getAttachments(){
+        return this._attributes.attachments ?? null;
     }
 
     setConversation(conversation){

@@ -5,9 +5,17 @@ import FormValidationService from '../services/FormValidationService.js';
 import RuntimeException from '../exceptions/RuntimeException.js';
 
 /**
+ * @typedef FormFieldMappingOptions
+ *
+ * @property {?FormValidationRuleParams} [params]
+ * @property {?string} [msg]
+ */
+
+/**
  * @typedef FormFieldMapping
  *
- * @property {Object.<string, string>} rules
+ * @property {Object.<string, FormFieldMappingOptions>} rules
+ * @property {?boolean} [isRequired=true]
  */
 
 /**

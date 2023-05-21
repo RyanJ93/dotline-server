@@ -7,6 +7,14 @@ import HTTPForm from '../forms/HTTPForm.js';
 import Service from './Service.js';
 
 class FormValidationService extends Service {
+    /**
+     * Returns the value associated to a field given its name.
+     *
+     * @param {Object.<string, any>} fields
+     * @param {string} fieldName
+     *
+     * @returns {any}
+     */
     static #getFieldValue(fields, fieldName){
         let propertyHierarchy = fieldName.split('.'), value = fields;
         propertyHierarchy.forEach((property) => {
@@ -20,10 +28,22 @@ class FormValidationService extends Service {
      */
     #lastErrorMessageBag = null;
 
+    /**
+     * @type {FormValidationRuleFactory}
+     */
     #formValidationRuleFactory;
 
+    /**
+     * @type {HTTPForm}
+     */
     #form;
 
+    /**
+     * Adds an error message to the error message bag.
+     *
+     * @param {string} fieldName
+     * @param {string} errorMessage
+     */
     #addErrorMessage(fieldName, errorMessage){
         if ( this.#lastErrorMessageBag === null ){
             this.#lastErrorMessageBag = new ErrorMessageBag();
@@ -31,12 +51,22 @@ class FormValidationService extends Service {
         this.#lastErrorMessageBag.add(fieldName, errorMessage);
     }
 
+    /**
+     * validates a given fields against a given value.
+     *
+     * @param {any} value
+     * @param {string} fieldName
+     * @param {FormFieldMapping} properties
+     *
+     * @returns {boolean}
+     */
     #validateFormField(value, fieldName, properties){
         let isValid = true;
         for ( const ruleName in properties.rules ){
             const formValidationRule = this.#formValidationRuleFactory.craft(ruleName);
-            if ( !formValidationRule.validate(value) ){
-                const message = properties.rules[ruleName] ?? formValidationRule.getDefaultErrorMessage();
+            const params = properties.rules[ruleName].params ?? {};
+            if ( !formValidationRule.validate(value, params) ){
+                const message = properties.rules[ruleName].msg ?? formValidationRule.getDefaultErrorMessage();
                 this.#addErrorMessage(fieldName, message);
                 isValid = false;
             }
@@ -44,6 +74,11 @@ class FormValidationService extends Service {
         return isValid;
     }
 
+    /**
+     * The class constructor.
+     *
+     * @param {HTTPForm} form
+     */
     constructor(form){
         super();
 
@@ -51,6 +86,15 @@ class FormValidationService extends Service {
         this.setForm(form);
     }
 
+    /**
+     * Sets the form to validate.
+     *
+     * @param {HTTPForm} form
+     *
+     * @returns {FormValidationService}
+     *
+     * @throws {IllegalArgumentException} If an invalid form instance is given.
+     */
     setForm(form){
         if ( !( form instanceof HTTPForm ) ){
             throw new IllegalArgumentException('Invalid form instance.');
@@ -59,15 +103,37 @@ class FormValidationService extends Service {
         return this;
     }
 
+    /**
+     * Returns the form to validate.
+     *
+     * @returns {HTTPForm}
+     */
     getForm(){
         return this.#form;
     }
 
+    /**
+     * Returns an error message bag containing all the errors occurred during last validation process.
+     *
+     * @returns {?ErrorMessageBag}
+     */
     getLastErrorMessageBag(){
         return this.#lastErrorMessageBag;
     }
 
+    /**
+     * Validates the given fields against the form that has been defined.
+     *
+     * @param {Object.<string, any>} fields
+     *
+     * @returns {boolean}
+     *
+     * @throws {IllegalArgumentException} If an invalid fields set is given.
+     */
     validate(fields){
+        if ( fields === null || typeof fields !== 'object' ){
+            throw new IllegalArgumentException('Invalid fields set.');
+        }
         let isValid = true, formMapping = this.#form.getMapping();
         for ( const fieldName in formMapping ){
             const value = FormValidationService.#getFieldValue(fields, fieldName);
