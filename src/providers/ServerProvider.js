@@ -35,12 +35,14 @@ class ServerProvider extends Provider {
         APIRouter.get('/conversation/:conversationID/message/:messageID/attachment/:attachmentID/get', AttachmentController.getClosure('get'));
         APIRouter.patch('/conversation/:conversationID/message/:messageID/mark-as-read', MessageController.getClosure('markAsRead'));
         APIRouter.delete('/conversation/:conversationID/message/:messageID/delete', MessageController.getClosure('delete'));
+        APIRouter.get('/conversation/:conversationID/message/list-commits', MessageController.getClosure('listCommits'));
         APIRouter.patch('/conversation/:conversationID/message/:messageID/edit', MessageController.getClosure('edit'));
         APIRouter.patch('/conversation/:conversationID/mark-as-read', MessageController.getClosure('markAsRead'));
         APIRouter.delete('/conversation/:conversationID/delete', ConversationController.getClosure('delete'));
         APIRouter.post('/conversation/:conversationID/message/send', MessageController.getClosure('send'));
         APIRouter.get('/conversation/:conversationID/message/list', MessageController.getClosure('list'));
         APIRouter.delete('/user/session/:accessToken/delete', UserSessionController.getClosure('delete'));
+        APIRouter.get('/conversation/commit-stats', ConversationController.getClosure('commitStats'));
         APIRouter.get('/conversation/:conversationID/get', ConversationController.getClosure('get'));
         APIRouter.delete('/user/session/delete-all', UserSessionController.getClosure('deleteAll'));
         APIRouter.get('/user/verify-username', UserController.getClosure('verifyUsername'));

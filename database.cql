@@ -31,3 +31,9 @@ CREATE TABLE IF NOT EXISTS user_settings (user_id TIMEUUID, locale ASCII, theme 
 CREATE TABLE IF NOT EXISTS message_flags (conversation_id TIMEUUID, user_id TIMEUUID, flag ASCII, message_id TIMEUUID, PRIMARY KEY((conversation_id), user_id, flag, message_id)) WITH CLUSTERING ORDER BY (user_id ASC, flag ASC, message_id DESC);
 
 CREATE TABLE IF NOT EXISTS conversation_stats (user_id TIMEUUID, conversation_id TIMEUUID, message_counter COUNTER, PRIMARY KEY ((user_id), conversation_id)) WITH CLUSTERING ORDER BY (conversation_id DESC);
+
+CREATE TABLE IF NOT EXISTS message_commits (conversation_id TIMEUUID, user_id TIMEUUID, id TIMEUUID, message_id TIMEUUID, action ASCII, date TIMESTAMP, PRIMARY KEY ((conversation_id), user_id, id)) WITH CLUSTERING ORDER BY (user_id ASC, id DESC);
+-- CREATE CUSTOM INDEX IF NOT EXISTS message_commits_by_message_id ON message_commits (message_id) USING 'StorageAttachedIndex';
+CREATE CUSTOM INDEX IF NOT EXISTS message_commits_by_message_id ON message_commits (message_id) USING 'org.apache.cassandra.index.sasi.SASIIndex';
+
+CREATE TABLE IF NOT EXISTS message_commit_stats (conversation_id TIMEUUID, user_id TIMEUUID, commit_counter COUNTER, PRIMARY KEY ((conversation_id), user_id)) WITH CLUSTERING ORDER BY (user_id ASC);

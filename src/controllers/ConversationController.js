@@ -6,6 +6,7 @@ import ConversationService from '../services/ConversationService.js';
 import HMACSigningParameters from '../DTOs/HMACSigningParameters.js';
 import AESStaticParameters from '../DTOs/AESStaticParameters.js';
 import Controller from './Controller.js';
+import MessageCommitService from '../services/MessageCommitService.js';
 
 class ConversationController extends Controller {
     /**
@@ -68,6 +69,11 @@ class ConversationController extends Controller {
         const conversationService = await ConversationService.makeFromEntity(conversationID, user);
         await conversationService.markAsRead(user);
         this._sendSuccessResponse();
+    }
+
+    async commitStats(){
+        const messageCommitCounterList = await new MessageCommitService().getMessageCommitCounterList(this._request.authenticatedUser);
+        this._sendSuccessResponse(200, 'SUCCESS', { messageCommitCounterList: messageCommitCounterList });
     }
 }
 

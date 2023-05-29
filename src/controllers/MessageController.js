@@ -60,6 +60,16 @@ class MessageController extends Controller {
         this._sendSuccessResponse(200, 'SUCCESS', { messageList: messageList });
     }
 
+    async listCommits(){
+        const user = this._request.authenticatedUser, conversationID = this._request.params.conversationID;
+        const messageService = await MessageService.makeFromEntity(user, conversationID);
+        const limit = parseInt(this._request.query.limit ?? 250);
+        const startingID = this._request.query.startingID ?? null;
+        const endingID = this._request.query.endingID ?? null;
+        const messageCommitList = await messageService.listMessageCommits(user, limit, endingID, startingID);
+        this._sendSuccessResponse(200, 'SUCCESS', { messageCommitList: messageCommitList });
+    }
+
     /**
      * Handles message delete requests.
      *

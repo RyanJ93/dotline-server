@@ -18,6 +18,8 @@ class MessageRepository extends CassandraRepository {
      * @returns {Promise<?Message>}
      *
      * @throws {IllegalArgumentException} If an invalid conversation instance is given.
+     *
+     * @deprecated
      */
     async getFirstByConversation(conversation, excludeRelations = false){
         if ( !( conversation instanceof Conversation ) ){
@@ -39,6 +41,8 @@ class MessageRepository extends CassandraRepository {
      *
      * @throws {IllegalArgumentException} If an invalid conversation instance is given.
      * @throws {IllegalArgumentException} If an id is given.
+     *
+     * @deprecated
      */
     async findByID(conversation, id){
         if ( !( conversation instanceof Conversation ) ){
@@ -96,7 +100,7 @@ class MessageRepository extends CassandraRepository {
         const message = new Message();
         message.setEncryptionIV(( content === '' ? null : encryptionIV ));
         message.setSignature(( content === '' ? null : signature ));
-        message.setID(cassandra.types.TimeUuid.now());
+        message.setID(MessageRepository.generateTimeUUID());
         message.setConversation(conversation);
         message.setCreatedAt(new Date());
         message.setUpdatedAt(new Date());

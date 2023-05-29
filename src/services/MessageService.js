@@ -4,6 +4,8 @@ import InvalidOperationException from '../exceptions/InvalidOperationException.j
 import IllegalArgumentException from '../exceptions/IllegalArgumentException.js';
 import EntityNotFoundException from '../exceptions/EntityNotFoundException.js';
 import ConversationStatService from './ConversationStatService.js';
+import MessageCommitAction from '../enum/MessageCommitAction.js';
+import MessageCommitService from './MessageCommitService.js';
 import ConversationService from './ConversationService.js';
 import MessageFlagService from './MessageFlagService.js';
 import MessageFlagName from '../enum/MessageFlagName.js';
@@ -201,22 +203,40 @@ class MessageService extends Service {
      * @throws {IllegalArgumentException} If an invalid limit is given.
      */
     async list(user, limit = 250, endingID = null, startingID = null){
-        if ( startingID !== null && ( startingID === '' || typeof startingID !== 'string' ) ){
-            throw new IllegalArgumentException('Invalid starting message ID.');
-        }
-        if ( endingID !== null && ( endingID === '' || typeof endingID !== 'string' ) ){
-            throw new IllegalArgumentException('Invalid ending message ID.');
-        }
-        if ( !( user instanceof User ) ){
-            throw new IllegalArgumentException('Invalid user instance.');
-        }
-        if ( isNaN(limit) || limit <= 0 ){
-            throw new IllegalArgumentException('Invalid limit.');
-        }
-        let messageList = await this.#messageRepository.list(this.#conversation, limit, endingID, startingID);
+        const messageList = await this.#messageRepository.list(this.#conversation, limit, endingID, startingID);
         await Promise.all(messageList.map((message) => this.#processMessageFlags(message, user)));
         // Filter out all those messages that have been deleted by the given user for itself.
         return messageList.filter((message) => !message.getVirtualAttribute('deleted'));
+    }
+
+    /**
+     * 
+     *
+     * @param {User} user
+     * @param {number} [limit=250]
+     * @param {?string} [endingMessageCommitID]
+     * @param {?string} [startingMessageCommitID]
+     *
+     * @returns {Promise<MessageCommit[]>}
+     *
+     * @throws {IllegalArgumentException} If an invalid starting message commit ID is given.
+     * @throws {IllegalArgumentException} If an invalid ending message commit ID is given.
+     * @throws {IllegalArgumentException} If an invalid user instance is given.
+     * @throws {IllegalArgumentException} If an invalid limit is given.
+     */
+    async listMessageCommits(user, limit = 250, endingMessageCommitID = null, startingMessageCommitID = null){
+        const messageCommitService = new MessageCommitService(this.#conversation), processes = [];
+        const messageCommitList = await messageCommitService.listMessageCommits(user, limit, endingMessageCommitID, startingMessageCommitID);
+        messageCommitList.forEach((messageCommit) => {
+            messageCommit.hideAttribute('conversation').hideAttribute('user');
+            if ( messageCommit.getMessage() !== null ){
+                processes.push(this.#processMessageFlags(messageCommit.getMessage(), user));
+            }
+        });
+        await Promise.all(processes);
+        return messageCommitList.filter((messageCommit) => {
+            return messageCommit.getMessage() === null || !messageCommit.getMessage().getVirtualAttribute('deleted');
+        });
     }
 
     /**
@@ -270,6 +290,7 @@ class MessageService extends Service {
         const otherMemberList = Object.keys(this.#conversation.getMembers()).filter((userID) => userID !== user.getID().toString());
         this.#message = await this.#messageRepository.create(this.#conversation, user, content, type, signature, encryptionIV);
         const processedAttachmentList = await new AttachmentService(this.#message).processFileAttachments(attachmentList);
+        await new MessageCommitService(this.#conversation, this.#message).commitAction(MessageCommitAction.CREATE);
         await this.#messageRepository.updateAttachments(this.#message, processedAttachmentList);
         this.#message.addVirtualAttribute('read', false);
         await this.#processMemberRelatedEntities(user);
@@ -305,7 +326,7 @@ class MessageService extends Service {
                 throw new IllegalArgumentException('Invalid signature.');
             }
         }
-        if ( content === '' && this.#message.getAttachments().length === 0 ){
+        if ( content === '' && ( this.#message.getAttachments()?.length ?? 0 ) === 0 ){
             throw new InvalidOperationException('Empty messages are not allowed.');
         }
         if ( content === '' ){
@@ -313,6 +334,7 @@ class MessageService extends Service {
         }
         await this.#messageRepository.edit(this.#message, content, signature, encryptionIV);
         this.#processCreatedMessageAttributes();
+        await new MessageCommitService(this.#conversation, this.#message).commitAction(MessageCommitAction.EDIT);
         await Promise.all(Object.keys(this.#conversation.getMembers()).map(async (memberID) => {
             const userMessage = this.#message.clone();
             await this.#processMessageFlags(userMessage, new User().setID(memberID));
@@ -341,6 +363,7 @@ class MessageService extends Service {
             return await this.delete();
         }
         // Mark the message as removed for the given user only.
+        await new MessageCommitService(this.#conversation, this.#message).commitAction(MessageCommitAction.DELETE, user);
         await messageFlagService.addMessageFlagsForUser([MessageFlagName.DELETED], user);
         this._eventBroker.emit('messageDelete', [user.getID()], this.#message.getID(), this.#conversation.getID());
     }
@@ -355,10 +378,10 @@ class MessageService extends Service {
         const userList = Object.keys(this.#conversation.getMembers()).map((userID) => new User().setID(userID));
         await new MessageFlagService(this.#message).removeMessageFlagsForMultipleUser(Object.values(MessageFlagName), userList);
         await Promise.all(userList.map((user => new ConversationStatService(user).decrementCounter(this.#conversation))));
+        await new MessageCommitService(this.#conversation, this.#message).commitAction(MessageCommitAction.DELETE);
         const memberList = Object.keys(this.#conversation.getMembers());
         await new AttachmentService(this.#message).removeAttachments();
         await this.#messageRepository.delete(this.#message);
-        // TODO: process attachments.
         this._eventBroker.emit('messageDelete', memberList, this.#message.getID(), this.#conversation.getID());
         this.#message = null;
     }
@@ -369,6 +392,7 @@ class MessageService extends Service {
      * @returns {Promise<void>}
      */
     async deleteConversationMessages(){
+        await new MessageCommitService(this.#conversation).removeMessageCommitsByConversation();
         await new AttachmentService().removeConversationAttachments(this.#conversation);
         await this.#messageRepository.deleteConversationMessages(this.#conversation);
     }

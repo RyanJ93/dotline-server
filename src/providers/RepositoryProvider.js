@@ -1,7 +1,9 @@
 'use strict';
 
 import UserConversationStatusRepositoryInjector from '../services/injectors/UserConversationStatusRepositoryInjector.js';
+import MessageCommitStatRepositoryInjector from '../services/injectors/MessageCommitStatRepositoryInjector.js';
 import ConversationStatRepositoryInjector from '../services/injectors/ConversationStatRepositoryInjector.js';
+import MessageCommitRepositoryInjector from '../services/injectors/MessageCommitRepositoryInjector.js';
 import UserSettingsRepositoryInjector from '../services/injectors/UserSettingsRepositoryInjector.js';
 import ConversationRepositoryInjector from '../services/injectors/ConversationRepositoryInjector.js';
 import MessageFlagRepositoryInjector from '../services/injectors/MessageFlagRepositoryInjector.js';
@@ -19,7 +21,9 @@ class RepositoryProvider extends Provider {
      */
     async run(){
         InjectionManager.getInstance().register('UserConversationStatusRepository', new UserConversationStatusRepositoryInjector());
+        InjectionManager.getInstance().register('MessageCommitStatRepository', new MessageCommitStatRepositoryInjector());
         InjectionManager.getInstance().register('ConversationStatRepository', new ConversationStatRepositoryInjector());
+        InjectionManager.getInstance().register('MessageCommitRepository', new MessageCommitRepositoryInjector());
         InjectionManager.getInstance().register('UserSettingsRepository', new UserSettingsRepositoryInjector());
         InjectionManager.getInstance().register('ConversationRepository', new ConversationRepositoryInjector());
         InjectionManager.getInstance().register('MessageFlagRepository', new MessageFlagRepositoryInjector());
