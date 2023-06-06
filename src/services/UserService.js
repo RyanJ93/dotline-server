@@ -166,25 +166,23 @@ class UserService extends Service {
         if ( !( user instanceof User ) ){
             throw new IllegalArgumentException('Invalid user instance.');
         }
-        const clientTrackingService = new ClientTrackingService(), accessTokenService = new AccessTokenService();
-        const clientTrackingInfo = await clientTrackingService.getClientTrackingInfoByHTTPRequest(HTTPRequest);
-        return await accessTokenService.generateAccessToken(user, clientTrackingInfo);
+        const clientTrackingInfo = await new ClientTrackingService().getClientTrackingInfoByHTTPRequest(HTTPRequest);
+        return await new AccessTokenService().generateAccessToken(user, clientTrackingInfo);
     }
 
     /**
      * Returns all the users matching the given username.
      *
      * @param {string} username
+     * @param {number} [limit=10]
      *
      * @returns {Promise<User[]>}
      *
      * @throws {IllegalArgumentException} If an invalid username is given.
+     * @throws {IllegalArgumentException} If an invalid limit is given.
      */
-    async searchByUsername(username){
-        if ( username === '' || typeof username !== 'string' ){
-            throw new IllegalArgumentException('Invalid username.');
-        }
-        return await this.#userRepository.searchByUsername(username);
+    async searchByUsername(username, limit = 10){
+        return await this.#userRepository.searchByUsername(username, limit);
     }
 
     /**

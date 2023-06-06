@@ -103,16 +103,21 @@ class UserRepository extends CassandraRepository {
      * Finds all the users having a username close enough to the given one.
      *
      * @param {string} username
+     * @param {number} [limit=10]
      *
      * @returns {Promise<User[]>}
      *
      * @throws {IllegalArgumentException} If an invalid username is given.
+     * @throws {IllegalArgumentException} If an invalid limit is given.
      */
-    async searchByUsername(username){
+    async searchByUsername(username, limit = 10){
         if ( username === '' || typeof username !== 'string' ){
             throw new IllegalArgumentException('Invalid username.');
         }
-        return await User.search(username, 'username');
+        if ( limit === null || isNaN(limit) || limit <= 0 ){
+            throw new IllegalArgumentException('Invalid limit.');
+        }
+        return await User.search(username, 'username', { limit: limit });
     }
 
     /**

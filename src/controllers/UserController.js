@@ -93,9 +93,10 @@ class UserController extends Controller {
      * @returns {Promise<void>}
      */
     async search(){
-        const userSearchHTTPForm = new UserSearchHTTPForm(), userService = new UserService();
-        userSearchHTTPForm.validate(this._request.query);
-        const userList = await userService.searchByUsername(this._request.query.username);
+        new UserSearchHTTPForm().validate(this._request.query);
+        let userList = await new UserService().searchByUsername(this._request.query.username);
+        const authenticatedUserID = this._request.authenticatedUser.getID().toString();
+        userList = userList.filter((user) => user.getID().toString() !== authenticatedUserID);
         this._sendSuccessResponse(200, 'SUCCESS', { userList: userList });
     }
 
