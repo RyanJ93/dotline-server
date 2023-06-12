@@ -8,5 +8,6 @@
  * @enum {string}
  */
 export default Object.freeze({
+    LOCATION: 'location',
     TEXT: 'text'
 });
