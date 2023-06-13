@@ -31,13 +31,19 @@ class App extends Facade {
     /**
      * Bootstrap the application and runs all the registered providers.
      *
+     * @param {boolean} [silent=false]
+     *
      * @returns {Promise<void>}
      */
-    static async bootstrap(){
-        console.log('Bootstrapping application...');
+    static async bootstrap(silent = false){
+        if ( silent !== true ){
+            console.log('Bootstrapping application...');
+        }
         await ProviderManager.getInstance().runProviders();
         process.emit('applicationReady');
-        console.log('Application started!');
+        if ( silent !== true ){
+            console.log('Application started!');
+        }
     }
 
     /**
