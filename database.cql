@@ -37,3 +37,6 @@ CREATE TABLE IF NOT EXISTS message_commits (conversation_id TIMEUUID, user_id TI
 CREATE CUSTOM INDEX IF NOT EXISTS message_commits_by_message_id ON message_commits (message_id) USING 'org.apache.cassandra.index.sasi.SASIIndex';
 
 CREATE TABLE IF NOT EXISTS message_commit_stats (conversation_id TIMEUUID, user_id TIMEUUID, commit_counter COUNTER, PRIMARY KEY ((conversation_id), user_id)) WITH CLUSTERING ORDER BY (user_id ASC);
+
+CREATE TABLE IF NOT EXISTS sticker_packs (id TIMEUUID, name VARCHAR, cover_picture BLOB, created_at TIMESTAMP, PRIMARY KEY (id));
+CREATE TABLE IF NOT EXISTS stickers (sticker_pack_id TIMEUUID, id TIMEUUID, emoji VARCHAR, content BLOB, animated BOOLEAN, PRIMARY KEY ((sticker_pack_id), id)) WITH CLUSTERING ORDER BY (id ASC);

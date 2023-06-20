@@ -10,8 +10,11 @@ import ErrorHandlerMiddleware from '../middlewares/ErrorHandlerMiddleware.js';
 import ConversationController from '../controllers/ConversationController.js';
 import UserSettingsController from '../controllers/UserSettingsController.js';
 import UserSessionController from '../controllers/UserSessionController.js';
+import StickerPackController from '../controllers/StickerPackController.js';
 import WebSocketServerManager from '../support/WebSocketServerManager.js';
+import AttachmentController from '../controllers/AttachmentController.js';
 import MessageController from '../controllers/MessageController.js';
+import StickerController from '../controllers/StickerController.js';
 import UserController from '../controllers/UserController.js';
 import InjectionManager from '../support/InjectionManager.js';
 import WebSocketRouter from '../support/WebSocketRouter.js';
@@ -20,7 +23,6 @@ import { WebSocketServer } from 'ws';
 import Provider from './Provider.js';
 import bb from 'express-busboy';
 import express from 'express';
-import AttachmentController from '../controllers/AttachmentController.js';
 
 class ServerProvider extends Provider {
     /**
@@ -37,11 +39,13 @@ class ServerProvider extends Provider {
         APIRouter.delete('/conversation/:conversationID/message/:messageID/delete', MessageController.getClosure('delete'));
         APIRouter.get('/conversation/:conversationID/message/list-commits', MessageController.getClosure('listCommits'));
         APIRouter.patch('/conversation/:conversationID/message/:messageID/edit', MessageController.getClosure('edit'));
+        APIRouter.get('/sticker-pack/:stickerPackID/sticker/:stickerID/get', StickerController.getClosure('get'));
         APIRouter.patch('/conversation/:conversationID/mark-as-read', MessageController.getClosure('markAsRead'));
         APIRouter.delete('/conversation/:conversationID/delete', ConversationController.getClosure('delete'));
         APIRouter.post('/conversation/:conversationID/message/send', MessageController.getClosure('send'));
         APIRouter.get('/conversation/:conversationID/message/list', MessageController.getClosure('list'));
         APIRouter.delete('/user/session/:accessToken/delete', UserSessionController.getClosure('delete'));
+        APIRouter.get('/sticker-pack/:stickerPackID/sticker/list', StickerController.getClosure('list'));
         APIRouter.get('/conversation/commit-stats', ConversationController.getClosure('commitStats'));
         APIRouter.get('/conversation/:conversationID/get', ConversationController.getClosure('get'));
         APIRouter.delete('/user/session/delete-all', UserSessionController.getClosure('deleteAll'));
@@ -50,6 +54,7 @@ class ServerProvider extends Provider {
         APIRouter.patch('/user/settings/edit', UserSettingsController.getClosure('edit'));
         APIRouter.get('/conversation/stats', ConversationController.getClosure('stats'));
         APIRouter.get('/conversation/list', ConversationController.getClosure('list'));
+        APIRouter.get('/sticker-pack/list', StickerPackController.getClosure('list'));
         APIRouter.get('/user/settings/get', UserSettingsController.getClosure('get'));
         APIRouter.get('/user/session/list', UserSessionController.getClosure('list'));
         APIRouter.post('/user/signup', UserController.getClosure('signup'));
