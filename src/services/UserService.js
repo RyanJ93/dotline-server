@@ -259,6 +259,36 @@ class UserService extends Service {
             await this.#userRepository.updateUsername(this.#user, username);
         }
     }
+
+    /**
+     * Changes the user's password.
+     *
+     * @param {string} currentPassword
+     * @param {string} newPassword
+     * @param {string} RSAPrivateKey
+     * @param {AESEncryptionParameters} RSAPrivateKeyEncryptionParameters
+     *
+     * @returns {Promise<User>}
+     *
+     * @throws {IllegalArgumentException} If an invalid AES encryption parameters object is given.
+     * @throws {UnauthorizedHTTPException} If the given password doesn't match the user's one.
+     * @throws {IllegalArgumentException} If an invalid current password is given.
+     * @throws {IllegalArgumentException} If an invalid RSA private key is given.
+     * @throws {IllegalArgumentException} If an invalid new password is given.
+     */
+    async changePassword(currentPassword, newPassword, RSAPrivateKey, RSAPrivateKeyEncryptionParameters){
+        if ( currentPassword === '' || typeof currentPassword !== 'string' ){
+            throw new IllegalArgumentException('Invalid current password.');
+        }
+        if ( newPassword === '' || typeof newPassword !== 'string' ){
+            throw new IllegalArgumentException('Invalid new password.');
+        }
+        if ( !PasswordUtils.comparePassword(currentPassword, this.#user.getPassword()) ){
+            throw new UnauthorizedHTTPException('Password mismatch.');
+        }
+        const passwordCocktail = PasswordUtils.preparePasswordCocktail(newPassword);
+        return this.#userRepository.changePassword(this.#user, passwordCocktail, RSAPrivateKey, RSAPrivateKeyEncryptionParameters);
+    }
 }
 
 export default UserService;

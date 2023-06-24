@@ -2,6 +2,7 @@
 
 import IllegalArgumentException from '../exceptions/IllegalArgumentException.js';
 import AESEncryptionParameters from '../DTOs/AESEncryptionParameters.js';
+import PasswordCocktail from '../DTOs/PasswordCocktail.js';
 import CassandraRepository from './CassandraRepository.js';
 import cassandra from 'cassandra-driver';
 import User from '../models/User.js';
@@ -183,6 +184,36 @@ class UserRepository extends CassandraRepository {
             throw new IllegalArgumentException('Invalid user.');
         }
         await user.setUsername(username).save();
+    }
+
+    /**
+     * Changes the given user's password.
+     *
+     * @param {User} user
+     * @param {PasswordCocktail} passwordCocktail
+     * @param {string} RSAPrivateKey
+     * @param {AESEncryptionParameters} RSAPrivateKeyEncryptionParameters
+     *
+     * @returns {Promise<void>}
+     *
+     * @throws {IllegalArgumentException} If an invalid AES encryption parameters object is given.
+     * @throws {IllegalArgumentException} If an invalid password cocktail is given.
+     * @throws {IllegalArgumentException} If an invalid RSA private key is given.
+     */
+    async changePassword(user, passwordCocktail, RSAPrivateKey, RSAPrivateKeyEncryptionParameters){
+        if ( !( RSAPrivateKeyEncryptionParameters instanceof AESEncryptionParameters ) ){
+            throw new IllegalArgumentException('Invalid AES encryption parameters.');
+        }
+        if ( RSAPrivateKey === '' || typeof RSAPrivateKey !== 'string' ){
+            throw new IllegalArgumentException('Invalid RSA private key.');
+        }
+        if ( !( passwordCocktail instanceof PasswordCocktail ) ){
+            throw new IllegalArgumentException('Invalid password cocktail.');
+        }
+        user.setRSAPrivateKeyEncryptionParameters(RSAPrivateKeyEncryptionParameters);
+        user.setRSAPrivateKey(RSAPrivateKey);
+        user.setPassword(passwordCocktail);
+        await user.save();
     }
 }
 

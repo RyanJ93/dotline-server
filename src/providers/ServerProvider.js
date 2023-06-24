@@ -49,6 +49,7 @@ class ServerProvider extends Provider {
         APIRouter.get('/conversation/commit-stats', ConversationController.getClosure('commitStats'));
         APIRouter.get('/conversation/:conversationID/get', ConversationController.getClosure('get'));
         APIRouter.delete('/user/session/delete-all', UserSessionController.getClosure('deleteAll'));
+        APIRouter.patch('/user/change-password', UserController.getClosure('changePassword'));
         APIRouter.get('/user/verify-username', UserController.getClosure('verifyUsername'));
         APIRouter.post('/conversation/create', ConversationController.getClosure('create'));
         APIRouter.patch('/user/settings/edit', UserSettingsController.getClosure('edit'));

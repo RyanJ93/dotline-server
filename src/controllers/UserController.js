@@ -1,6 +1,7 @@
 'use strict';
 
 import UserVerifyUsernameHTTPForm from '../forms/UserVerifyUsernameHTTPForm.js';
+import UserChangePasswordHTTPForm from '../forms/UserChangePasswordHTTPForm.js';
 import AESEncryptionParameters from '../DTOs/AESEncryptionParameters.js';
 import AccessTokenService from '../services/AccessTokenService.js';
 import UserSignupHTTPForm from '../forms/UserSignupHTTPForm.js';
@@ -111,6 +112,16 @@ class UserController extends Controller {
         const { username, name, surname } = this._request.body;
         await userService.edit(username, name, surname);
         this._sendSuccessResponse(200, 'SUCCESS', { user: userService.getUser().toJSON(true) });
+    }
+
+    async changePassword(){
+        new UserChangePasswordHTTPForm().validate(this._request.body);
+        const RSAPrivateKeyEncryptionParameters = AESEncryptionParameters.makeFromHTTPRequest(this._request, 'RSAPrivateKeyEncryptionParameters');
+        const { RSAPrivateKey, newPassword, currentPassword } = this._request.body;
+        const userService = new UserService(this._request.authenticatedUser);
+        await userService.changePassword(currentPassword, newPassword, RSAPrivateKey, RSAPrivateKeyEncryptionParameters);
+        await new AccessTokenService().deleteUserTokens(this._request.authenticatedUser, this._request.accessToken);
+        this._sendSuccessResponse();
     }
 }
 
