@@ -15,6 +15,7 @@ import WebSocketServerManager from '../support/WebSocketServerManager.js';
 import AttachmentController from '../controllers/AttachmentController.js';
 import MessageController from '../controllers/MessageController.js';
 import StickerController from '../controllers/StickerController.js';
+import ServerController from '../controllers/ServerController.js';
 import UserController from '../controllers/UserController.js';
 import InjectionManager from '../support/InjectionManager.js';
 import WebSocketRouter from '../support/WebSocketRouter.js';
@@ -59,6 +60,7 @@ class ServerProvider extends Provider {
         APIRouter.get('/user/settings/get', UserSettingsController.getClosure('get'));
         APIRouter.get('/user/session/list', UserSessionController.getClosure('list'));
         APIRouter.post('/user/signup', UserController.getClosure('signup'));
+        APIRouter.get('/server/info', ServerController.getClosure('info'));
         APIRouter.get('/user/search', UserController.getClosure('search'));
         APIRouter.get('/user/logout', UserController.getClosure('logout'));
         APIRouter.post('/user/login', UserController.getClosure('login'));

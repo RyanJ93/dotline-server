@@ -3,6 +3,7 @@
 import ProviderManager from '../support/ProviderManager.js';
 import Facade from './Facade.js';
 import Logger from './Logger.js';
+import fs from 'node:fs';
 
 class App extends Facade {
     /**
@@ -26,6 +27,16 @@ class App extends Facade {
      */
     static getDebug(){
         return App.#debug;
+    }
+
+    /**
+     * Returns server version.
+     *
+     * @returns {string}
+     */
+    static getVersion(){
+        const packageJSONContent = fs.readFileSync('./package.json').toString();
+        return JSON.parse(packageJSONContent)?.version ?? null;
     }
 
     /**
