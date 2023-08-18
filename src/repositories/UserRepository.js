@@ -12,7 +12,7 @@ class UserRepository extends CassandraRepository {
      * Creates a new user.
      *
      * @param {string} username
-     * @param {string} password
+     * @param {PasswordCocktail} passwordCocktail
      * @param {string} RSAPublicKey
      * @param {string} RSAPrivateKey
      * @param {AESEncryptionParameters} RSAPrivateKeyEncryptionParameters
@@ -20,12 +20,12 @@ class UserRepository extends CassandraRepository {
      * @returns {Promise<User>}
      *
      * @throws {IllegalArgumentException} If some invalid RSA private key encryption parameters are given.
+     * @throws {IllegalArgumentException} If an invalid password cocktail is given.
      * @throws {IllegalArgumentException} If an invalid RSA private key is given.
      * @throws {IllegalArgumentException} If an invalid RSA public key is given.
-     * @throws {IllegalArgumentException} If an invalid password is given.
      * @throws {IllegalArgumentException} If an invalid username is given.
      */
-    async create(username, password, RSAPublicKey, RSAPrivateKey, RSAPrivateKeyEncryptionParameters){
+    async create(username, passwordCocktail, RSAPublicKey, RSAPrivateKey, RSAPrivateKeyEncryptionParameters){
         if ( !( RSAPrivateKeyEncryptionParameters instanceof AESEncryptionParameters ) ){
             throw new IllegalArgumentException('Invalid RSA private key encryption parameters.');
         }
@@ -35,8 +35,8 @@ class UserRepository extends CassandraRepository {
         if ( RSAPublicKey === '' || typeof RSAPublicKey !== 'string' ){
             throw new IllegalArgumentException('Invalid RSA public key.');
         }
-        if ( password === '' || typeof password !== 'string' ){
-            throw new IllegalArgumentException('Invalid password.');
+        if ( !( passwordCocktail instanceof PasswordCocktail ) ){
+            throw new IllegalArgumentException('Invalid password cocktail.');
         }
         if ( username === '' || typeof username !== 'string' ){
             throw new IllegalArgumentException('Invalid username.');
@@ -44,8 +44,8 @@ class UserRepository extends CassandraRepository {
         const user = new User(), createdAt = new Date();
         user.setRSAPrivateKeyEncryptionParameters(RSAPrivateKeyEncryptionParameters);
         user.setRSAPrivateKey(RSAPrivateKey).setRSAPublicKey(RSAPublicKey);
+        user.setUsername(username).setPassword(passwordCocktail);
         user.setCreatedAt(createdAt).setUpdatedAt(createdAt);
-        user.setUsername(username).setPassword(password);
         user.setID(cassandra.types.TimeUuid.now());
         await user.save();
         return user;
