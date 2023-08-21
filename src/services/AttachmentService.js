@@ -50,7 +50,7 @@ class AttachmentService extends Service {
      * @throws {IllegalArgumentException} If an invalid message is given.
      */
     setMessage(message){
-        if ( !( message instanceof Message ) ){
+        if ( message !== null && !( message instanceof Message ) ){
             throw new IllegalArgumentException('Invalid message.');
         }
         this.#message = message;
