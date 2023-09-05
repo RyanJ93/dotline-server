@@ -51,7 +51,14 @@ class AuthenticatedMiddleware extends Middleware {
  * @constant {string[]}
  */
 Object.defineProperty(AuthenticatedMiddleware, 'WHITELISTED_ROUTE_LIST', {
-    value: Object.freeze(['/user/login', '/user/signup', '/user/verify-username', '/server/info']),
+    value: Object.freeze([
+        '/user/init-account-recovery',
+        '/user/verify-username',
+        '/user/recover-account',
+        '/server/info',
+        '/user/signup',
+        '/user/login'
+    ]),
     writable: false
 });
 

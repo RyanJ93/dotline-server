@@ -171,9 +171,6 @@ class ConversationService extends Service {
      * @throws {IllegalArgumentException} If an invalid user instance is given.
      */
     async getConversationByID(conversationID, user = null){
-        if ( conversationID === '' || typeof conversationID !== 'string' ){
-            throw new IllegalArgumentException('Invalid conversation ID.');
-        }
         if ( user !== null && !( user instanceof User ) ){
             throw new IllegalArgumentException('Invalid user instance.');
         }

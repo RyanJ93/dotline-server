@@ -30,14 +30,15 @@ class AccessTokenRepository extends CassandraRepository {
         if ( !( user instanceof User ) ){
             throw new IllegalArgumentException('Invalid user instance.');
         }
-        const accessToken = new AccessToken();
+        const accessToken = new AccessToken(), date = new Date();
         accessToken.setBrowserName(clientTrackingInfo.getBrowserName());
+        accessToken.setUserAgent(clientTrackingInfo.getUserAgent());
         accessToken.setLocation(clientTrackingInfo.getLocation());
         accessToken.setOSName(clientTrackingInfo.getOSName());
         accessToken.setIP(clientTrackingInfo.getIP());
         accessToken.setAccessToken(accessTokenString);
-        accessToken.setFirstAccess(new Date());
-        accessToken.setLastAccess(new Date());
+        accessToken.setFirstAccess(date);
+        accessToken.setLastAccess(date);
         accessToken.setUser(user);
         await accessToken.save();
         return accessToken;

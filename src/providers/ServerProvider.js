@@ -43,13 +43,16 @@ class ServerProvider extends Provider {
         APIRouter.get('/sticker-pack/:stickerPackID/sticker/:stickerID/get', StickerController.getClosure('get'));
         APIRouter.patch('/conversation/:conversationID/mark-as-read', MessageController.getClosure('markAsRead'));
         APIRouter.delete('/conversation/:conversationID/delete', ConversationController.getClosure('delete'));
+        APIRouter.patch('/user/regenerate-recovery-key', UserController.getClosure('regenerateRecoveryKey'));
         APIRouter.post('/conversation/:conversationID/message/send', MessageController.getClosure('send'));
         APIRouter.get('/conversation/:conversationID/message/list', MessageController.getClosure('list'));
         APIRouter.delete('/user/session/:accessToken/delete', UserSessionController.getClosure('delete'));
         APIRouter.get('/sticker-pack/:stickerPackID/sticker/list', StickerController.getClosure('list'));
+        APIRouter.post('/user/init-account-recovery', UserController.getClosure('initAccountRecovery'));
         APIRouter.get('/conversation/commit-stats', ConversationController.getClosure('commitStats'));
         APIRouter.get('/conversation/:conversationID/get', ConversationController.getClosure('get'));
         APIRouter.delete('/user/session/delete-all', UserSessionController.getClosure('deleteAll'));
+        APIRouter.patch('/user/recover-account', UserController.getClosure('recoverAccount'));
         APIRouter.patch('/user/change-password', UserController.getClosure('changePassword'));
         APIRouter.get('/user/verify-username', UserController.getClosure('verifyUsername'));
         APIRouter.post('/conversation/create', ConversationController.getClosure('create'));

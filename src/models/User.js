@@ -16,7 +16,10 @@ class User extends SearchEnabledModel {
             },
             keys: ['id'],
             fields: {
+                recoveryRSAPrivateKeyEncryptionParameters: { name: 'recovery_rsa_private_key_encryption_parameters', UDTImplementation: AESEncryptionParameters },
                 RSAPrivateKeyEncryptionParameters: { name: 'rsa_private_key_encryption_parameters', UDTImplementation: AESEncryptionParameters },
+                recoveryRSAPrivateKey: { name: 'recovery_rsa_private_key', type: 'string' },
+                recoveryKey: { name: 'recovery_key', UDTImplementation: PasswordCocktail },
                 password: { name: 'password', UDTImplementation: PasswordCocktail },
                 RSAPrivateKey: { name: 'rsa_private_key', type: 'string' },
                 RSAPublicKey: { name: 'rsa_public_key', type: 'string' },
@@ -76,6 +79,15 @@ class User extends SearchEnabledModel {
         return this._attributes.RSAPublicKey ?? null;
     }
 
+    setRecoveryRSAPrivateKeyEncryptionParameters(recoveryRSAPrivateKeyEncryptionParameters){
+        this._attributes.recoveryRSAPrivateKeyEncryptionParameters = recoveryRSAPrivateKeyEncryptionParameters;
+        return this;
+    }
+
+    getRecoveryRSAPrivateKeyEncryptionParameters(){
+        return this._attributes.recoveryRSAPrivateKeyEncryptionParameters ?? null;
+    }
+
     setRSAPrivateKeyEncryptionParameters(RSAPrivateKeyEncryptionParameters){
         this._attributes.RSAPrivateKeyEncryptionParameters = RSAPrivateKeyEncryptionParameters;
         return this;
@@ -83,6 +95,24 @@ class User extends SearchEnabledModel {
 
     getRSAPrivateKeyEncryptionParameters(){
         return this._attributes.RSAPrivateKeyEncryptionParameters ?? null;
+    }
+
+    setRecoveryRSAPrivateKey(recoveryRSAPrivateKey){
+        this._attributes.recoveryRSAPrivateKey = recoveryRSAPrivateKey;
+        return this;
+    }
+
+    getRecoveryRSAPrivateKey(){
+        return this._attributes.recoveryRSAPrivateKey ?? null;
+    }
+
+    setRecoveryKey(recoveryKey){
+        this._attributes.recoveryKey = recoveryKey;
+        return this;
+    }
+
+    getRecoveryKey(){
+        return this._attributes.recoveryKey ?? null;
     }
 
     setLastAccess(lastAccess){

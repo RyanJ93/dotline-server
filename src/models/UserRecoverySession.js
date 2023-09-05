@@ -4,29 +4,53 @@ import GeoLocation from '../DTOs/GeoLocation.js';
 import Model from './Model.js';
 import User from './User.js';
 
-class AccessToken extends Model {
-    /**
-     * The class constructor.
-     */
+class UserRecoverySession extends Model {
     constructor(){
         super();
 
         this._mapping = {
-            tableName: 'access_tokens',
-            keys: ['access_token'],
-            hiddenFields: ['user'],
+            tableName: 'user_recovery_sessions',
+            keys: ['session_token'],
             fields: {
                 user: { name: 'user_id', relation: { model: User, mapping: { user_id: { foreign: 'id', method: 'getID' } }} },
                 location: { name: 'location', UDTImplementation: GeoLocation },
+                sessionToken: { name: 'session_token', type: 'string' },
                 browserName: { name: 'browser_name', type: 'string' },
-                accessToken: { name: 'access_token', type: 'string' },
-                firstAccess: { name: 'first_access', type: 'date' },
-                lastAccess: { name: 'last_access', type: 'date' },
+                createdAt: { name: 'created_at', type: 'timestamp' },
+                expiresAt: { name: 'expires_at', type: 'timestamp' },
                 userAgent: { name: 'user_agent', type: 'string' },
+                fulfilled: { name: 'fulfilled', type: 'boolean' },
                 OSName: { name: 'os_name', type: 'date' },
                 ip: { name: 'ip', type: 'inet' }
             }
         };
+    }
+
+    setSessionToken(sessionToken){
+        this._attributes.sessionToken = sessionToken;
+        return this;
+    }
+
+    getSessionToken(){
+        return this._attributes.sessionToken ?? null;
+    }
+
+    setCreatedAt(createdAt){
+        this._attributes.createdAt = createdAt;
+        return this;
+    }
+
+    getCreatedAt(){
+        return this._attributes.createdAt ?? null;
+    }
+
+    setExpiresAt(expiresAt){
+        this._attributes.expiresAt = expiresAt;
+        return this;
+    }
+
+    getExpiresAt(){
+        return this._attributes.expiresAt ?? null;
     }
 
     setUser(user){
@@ -36,33 +60,6 @@ class AccessToken extends Model {
 
     getUser(){
         return this._attributes.user ?? null;
-    }
-
-    setAccessToken(accessToken){
-        this._attributes.accessToken = accessToken;
-        return this;
-    }
-
-    getAccessToken(){
-        return this._attributes.accessToken ?? null;
-    }
-
-    setFirstAccess(firstAccess){
-        this._attributes.firstAccess = firstAccess;
-        return this;
-    }
-
-    getFirstAccess(){
-        return this._attributes.firstAccess ?? null;
-    }
-
-    setLastAccess(lastAccess){
-        this._attributes.lastAccess = lastAccess;
-        return this;
-    }
-
-    getLastAccess(){
-        return this._attributes.lastAccess ?? null;
     }
 
     setUserAgent(userAgent){
@@ -92,6 +89,15 @@ class AccessToken extends Model {
         return this._attributes.browserName ?? null;
     }
 
+    setFulfilled(fulfilled){
+        this._attributes.fulfilled = fulfilled;
+        return this;
+    }
+
+    getFulfilled(){
+        return this._attributes.fulfilled ?? null;
+    }
+
     setOSName(OSName){
         this._attributes.OSName = OSName;
         return this;
@@ -111,4 +117,4 @@ class AccessToken extends Model {
     }
 }
 
-export default AccessToken;
+export default UserRecoverySession;

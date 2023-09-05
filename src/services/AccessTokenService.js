@@ -2,7 +2,6 @@
 
 import UnauthorizedHTTPException from '../exceptions/UnauthorizedHTTPException.js';
 import IllegalArgumentException from '../exceptions/IllegalArgumentException.js';
-import ClientTrackingInfo from '../DTOs/ClientTrackingInfo.js';
 import AccessToken from '../models/AccessToken.js';
 import CryptoUtils from '../utils/CryptoUtils.js';
 import Injector from '../facades/Injector.js';
@@ -88,13 +87,7 @@ class AccessTokenService extends Service {
      * @throws {IllegalArgumentException} If an invalid user instance is given.
      */
     async generateAccessToken(user, clientTrackingInfo){
-        if ( !( clientTrackingInfo instanceof ClientTrackingInfo ) ){
-            throw new IllegalArgumentException('Invalid client tracking info.');
-        }
-        if ( !( user instanceof User ) ){
-            throw new IllegalArgumentException('Invalid user.');
-        }
-        const accessTokenString = CryptoUtils.generateRandomString(256);
+        const accessTokenString = CryptoUtils.generateRandomString(AccessTokenService.ACCESS_TOKEN_STRING_LENGTH);
         return this.#accessToken = await this.#accessTokenRepository.createAccessToken(user, accessTokenString, clientTrackingInfo);
     }
 
@@ -109,13 +102,11 @@ class AccessTokenService extends Service {
      * @throws {IllegalArgumentException} If an invalid access token string is given.
      */
     async getUserByAccessToken(accessTokenString){
-        if ( accessTokenString === '' || typeof accessTokenString !== 'string' ){
-            throw new IllegalArgumentException('Invalid access token string.');
-        }
         const accessToken = await this.#accessTokenRepository.getAccessToken(accessTokenString);
         if ( accessToken === null || accessToken.getUser() === null ){
             throw new UnauthorizedHTTPException('No such token found.');
         }
+        this.#accessToken = accessToken;
         return accessToken.getUser();
     }
 
@@ -199,5 +190,10 @@ class AccessTokenService extends Service {
         await Promise.all(processes);
     }
 }
+
+/**
+ * @constant {number}
+ */
+Object.defineProperty(AccessTokenService, 'ACCESS_TOKEN_STRING_LENGTH', { value: 256, writable: false });
 
 export default AccessTokenService;

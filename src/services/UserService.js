@@ -1,11 +1,12 @@
 'use strict';
 
+import UserRecoveryInitializationParameters from '../DTOs/UserRecoveryInitializationParameters.js';
 import DuplicatedUsernameException from '../exceptions/DuplicatedUsernameException.js';
 import UnauthorizedHTTPException from '../exceptions/UnauthorizedHTTPException.js';
 import IllegalArgumentException from '../exceptions/IllegalArgumentException.js';
+import EntityNotFoundException from '../exceptions/EntityNotFoundException.js';
 import NotFoundHTTPException from '../exceptions/NotFoundHTTPException.js';
-import AESEncryptionParameters from '../DTOs/AESEncryptionParameters.js';
-import ClientTrackingService from './ClientTrackingService.js';
+import UserRecoverySessionService from './UserRecoverySessionService.js';
 import AccessTokenService from './AccessTokenService.js';
 import PasswordUtils from '../utils/PasswordUtils.js';
 import Injector from '../facades/Injector.js';
@@ -13,6 +14,26 @@ import User from '../models/User.js';
 import Service from './Service.js';
 
 class UserService extends Service {
+    /**
+     * Generates an instance of this class based on the given entity's username.
+     *
+     * @param {string} username
+     *
+     * @returns {Promise<UserService>}
+     *
+     * @throws {IllegalArgumentException} If the provided username is not compliant with the accepted format.
+     * @throws {EntityNotFoundException} If no user matching the given username is found.
+     * @throws {IllegalArgumentException} If an invalid username is given.
+     */
+    static async makeFromEntity(username){
+        const userService = new UserService();
+        await userService.getUserByUsername(username);
+        if ( userService.getUser() === null ){
+            throw new EntityNotFoundException('No user matching the given username found.');
+        }
+        return userService;
+    }
+
     /**
      * @type {UserRepository}
      */
@@ -62,20 +83,44 @@ class UserService extends Service {
     }
 
     /**
+     * Returns the user matching the given ID.
+     *
+     * @param {string} userID
+     *
+     * @returns {Promise<?User>}
+     *
+     * @throws {IllegalArgumentException} If an invalid user ID is given.
+     */
+    async getUserByID(userID){
+        return this.#user = await this.#userRepository.findByID(userID);
+    }
+
+    /**
+     * Returns the user matching the given username.
+     *
+     * @param {string} username
+     *
+     * @returns {Promise<?User>}
+     *
+     * @throws {IllegalArgumentException} If the provided username is not compliant with the accepted format.
+     * @throws {IllegalArgumentException} If an invalid username is given.
+     */
+    async getUserByUsername(username){
+        return this.#user = await this.#userRepository.getUserByUsername(username);
+    }
+
+    /**
      * Checks if a given username has been taken by some user.
      *
      * @param {string} username
      *
      * @returns {Promise<boolean>}
      *
+     * @throws {IllegalArgumentException} If the provided username is not compliant with the accepted format.
      * @throws {IllegalArgumentException} If an invalid username is given.
      */
     async isUsernameAvailable(username){
-        // TODO: validate username format.
-        if ( username === '' || typeof username !== 'string' ){
-            throw new IllegalArgumentException('Invalid username.');
-        }
-        return ( await this.#userRepository.getUserByUsername(username) ) === null;
+        return ( await this.getUserByUsername(username) ) === null;
     }
 
     /**
@@ -83,42 +128,22 @@ class UserService extends Service {
      *
      * @param {string} username
      * @param {string} password
-     * @param {string} RSAPublicKey
-     * @param {string} RSAPrivateKey
-     * @param {AESEncryptionParameters} RSAPrivateKeyEncryptionParameters
+     * @param {UserCompositeRSAParameters} userCompositeRSAParameters
      *
      * @returns {Promise<User>}
      *
+     * @throws {IllegalArgumentException} If the provided username is not compliant with the accepted format.
+     * @throws {IllegalArgumentException} If some invalid user composite RSA parameters are given.
+     * @throws {DuplicatedUsernameException} If the given username has been taken by someone else.
      * @throws {IllegalArgumentException} If an invalid username is given.
      * @throws {IllegalArgumentException} If an invalid password is given.
-     * @throws {IllegalArgumentException} If an invalid RSA public key is given.
-     * @throws {IllegalArgumentException} If an invalid RSA private key is given.
-     * @throws {IllegalArgumentException} If an invalid AES encryption parameters object is given.
-     * @throws {DuplicatedUsernameException} If the given username has been taken by someone else.
      */
-    async signup(username, password, RSAPublicKey, RSAPrivateKey, RSAPrivateKeyEncryptionParameters){
-        // TODO: validate username format.
-        if ( username === '' || typeof username !== 'string' ){
-            throw new IllegalArgumentException('Invalid username.');
-        }
-        if ( password === '' || typeof password !== 'string' ){
-            throw new IllegalArgumentException('Invalid password.');
-        }
-        if ( RSAPublicKey === '' || typeof RSAPublicKey !== 'string' ){
-            throw new IllegalArgumentException('Invalid RSA public key.');
-        }
-        if ( RSAPrivateKey === '' || typeof RSAPrivateKey !== 'string' ){
-            throw new IllegalArgumentException('Invalid RSA private key.');
-        }
-        if ( !( RSAPrivateKeyEncryptionParameters instanceof AESEncryptionParameters ) ){
-            throw new IllegalArgumentException('Invalid AES encryption parameters.');
-        }
+    async signup(username, password, userCompositeRSAParameters){
         const isUsernameAvailable = await this.isUsernameAvailable(username);
         if ( !isUsernameAvailable ){
             throw new DuplicatedUsernameException('This username has already been taken.');
         }
-        const passwordCocktail = PasswordUtils.preparePasswordCocktail(password);
-        return this.#userRepository.create(username, passwordCocktail, RSAPublicKey, RSAPrivateKey, RSAPrivateKeyEncryptionParameters);
+        return this.#user = await this.#userRepository.create(username, password, userCompositeRSAParameters);
     }
 
     /**
@@ -129,45 +154,36 @@ class UserService extends Service {
      *
      * @returns {Promise<User>}
      *
+     * @throws {IllegalArgumentException} If the provided username is not compliant with the accepted format.
+     * @throws {UnauthorizedHTTPException} If the given password doesn't match the user's one.
+     * @throws {NotFoundHTTPException} If no user matching the given username is found.
      * @throws {IllegalArgumentException} If an invalid username is given.
      * @throws {IllegalArgumentException} If an invalid password is given.
-     * @throws {NotFoundHTTPException} If no user matching the given username is found.
-     * @throws {UnauthorizedHTTPException} If the given password doesn't match the user's one.
      */
     async authenticateWithCredentials(username, password){
-        // TODO: validate username format.
-        if ( username === '' || typeof username !== 'string' ){
-            throw new IllegalArgumentException('Invalid username.');
-        }
         if ( password === '' || typeof password !== 'string' ){
             throw new IllegalArgumentException('Invalid password.');
         }
-        const user = await this.#userRepository.getUserByUsername(username);
-        if ( user === null ){
+        if ( ( await this.getUserByUsername(username) ) === null ){
             throw new NotFoundHTTPException('No such user found.');
         }
-        if ( !PasswordUtils.comparePassword(password, user.getPassword()) ){
+        if ( !PasswordUtils.comparePassword(password, this.#user.getPassword()) ){
             throw new UnauthorizedHTTPException('Password mismatch.');
         }
-        return user;
+        return this.#user;
     }
 
     /**
-     * Generates a new access token for a given user.
+     * Generates a new access token for the defined user.
      *
-     * @param {User} user
-     * @param {Request} HTTPRequest
+     * @param {ClientTrackingInfo} clientTrackingInfo
      *
      * @returns {Promise<AccessToken>}
      *
-     * @throws {IllegalArgumentException} If an invalid user instance is given.
+     * @throws {IllegalArgumentException} If an invalid client tracking info instance is given.
      */
-    async generateAccessToken(user, HTTPRequest){
-        if ( !( user instanceof User ) ){
-            throw new IllegalArgumentException('Invalid user instance.');
-        }
-        const clientTrackingInfo = await new ClientTrackingService().getClientTrackingInfoByHTTPRequest(HTTPRequest);
-        return await new AccessTokenService().generateAccessToken(user, clientTrackingInfo);
+    async generateAccessToken(clientTrackingInfo){
+        return await new AccessTokenService().generateAccessToken(this.#user, clientTrackingInfo);
     }
 
     /**
@@ -178,6 +194,7 @@ class UserService extends Service {
      *
      * @returns {Promise<User[]>}
      *
+     * @throws {IllegalArgumentException} If the provided username is not compliant with the accepted format.
      * @throws {IllegalArgumentException} If an invalid username is given.
      * @throws {IllegalArgumentException} If an invalid limit is given.
      */
@@ -211,22 +228,6 @@ class UserService extends Service {
     }
 
     /**
-     * Finds and return the user matching the given ID.
-     *
-     * @param {string} id
-     *
-     * @returns {Promise<?User>}
-     *
-     * @throws {IllegalArgumentException} If an invalid ID is given.
-     */
-    async find(id){
-        if ( id === '' || typeof id !== 'string' ){
-            throw new IllegalArgumentException('Invalid ID.');
-        }
-        return this.#user = await this.#userRepository.findOne(id);
-    }
-
-    /**
      * Updates the defined user.
      *
      * @param {string} username
@@ -235,24 +236,16 @@ class UserService extends Service {
      *
      * @returns {Promise<void>}
      *
+     * @throws {IllegalArgumentException} If the provided username is not compliant with the accepted format.
      * @throws {DuplicatedUsernameException} If the given username has already been taken.
      * @throws {IllegalArgumentException} If an invalid username is given.
      * @throws {IllegalArgumentException} If an invalid surname is given.
      * @throws {IllegalArgumentException} If an invalid name is given.
      */
     async edit(username, name, surname){
-        if ( surname !== null && ( surname === '' || typeof surname !== 'string' ) ){
-            throw new IllegalArgumentException('Invalid surname.');
-        }
-        if ( name !== null && ( name === '' || typeof name !== 'string' ) ){
-            throw new IllegalArgumentException('Invalid name.');
-        }
-        if ( username === '' || typeof username !== 'string' ){
-            throw new IllegalArgumentException('Invalid username.');
-        }
         await this.#userRepository.updateOptionalInfo(this.#user, surname, name);
         if ( this.#user.getUsername() !== username ){
-            const otherUser = await this.#userRepository.getUserByUsername(surname);
+            const otherUser = await this.getUserByUsername(username);
             if ( otherUser !== null ){
                 throw new DuplicatedUsernameException('Username already taken.');
             }
@@ -261,14 +254,14 @@ class UserService extends Service {
     }
 
     /**
-     * Changes the user's password.
+     * Checks if the given current password matches, if so updates the user's password.
      *
      * @param {string} currentPassword
      * @param {string} newPassword
      * @param {string} RSAPrivateKey
      * @param {AESEncryptionParameters} RSAPrivateKeyEncryptionParameters
      *
-     * @returns {Promise<User>}
+     * @returns {Promise<void>}
      *
      * @throws {IllegalArgumentException} If an invalid AES encryption parameters object is given.
      * @throws {UnauthorizedHTTPException} If the given password doesn't match the user's one.
@@ -280,14 +273,79 @@ class UserService extends Service {
         if ( currentPassword === '' || typeof currentPassword !== 'string' ){
             throw new IllegalArgumentException('Invalid current password.');
         }
-        if ( newPassword === '' || typeof newPassword !== 'string' ){
-            throw new IllegalArgumentException('Invalid new password.');
-        }
         if ( !PasswordUtils.comparePassword(currentPassword, this.#user.getPassword()) ){
             throw new UnauthorizedHTTPException('Password mismatch.');
         }
-        const passwordCocktail = PasswordUtils.preparePasswordCocktail(newPassword);
-        return this.#userRepository.changePassword(this.#user, passwordCocktail, RSAPrivateKey, RSAPrivateKeyEncryptionParameters);
+        await this.updatePassword(newPassword, RSAPrivateKey, RSAPrivateKeyEncryptionParameters);
+    }
+
+    /**
+     * Updates the user's password.
+     *
+     * @param {string} password
+     * @param {string} RSAPrivateKey
+     * @param {AESEncryptionParameters} RSAPrivateKeyEncryptionParameters
+     *
+     * @returns {Promise<void>}
+     *
+     * @throws {IllegalArgumentException} If an invalid AES encryption parameters object is given.
+     * @throws {IllegalArgumentException} If an invalid RSA private key is given.
+     * @throws {IllegalArgumentException} If an invalid password is given.
+     */
+    async updatePassword(password, RSAPrivateKey, RSAPrivateKeyEncryptionParameters){
+        await this.#userRepository.changePassword(this.#user, password, RSAPrivateKey, RSAPrivateKeyEncryptionParameters);
+    }
+
+    /**
+     * Updates the user's recovery key.
+     *
+     * @param {AESEncryptionParameters} recoveryRSAPrivateKeyEncryptionParameters
+     * @param {string} recoveryRSAPrivateKey
+     * @param {string} recoveryKey
+     *
+     * @returns {Promise<void>}
+     *
+     * @throws {IllegalArgumentException} If some invalid recovery AES encryption parameters are given.
+     * @throws {IllegalArgumentException} If an invalid recovery RSA private key is given.
+     * @throws {IllegalArgumentException} If an invalid recovery key is given.
+     */
+    async regenerateRecoveryKey(recoveryRSAPrivateKeyEncryptionParameters, recoveryRSAPrivateKey, recoveryKey){
+        return await this.#userRepository.regenerateRecoveryKey(this.#user, recoveryRSAPrivateKeyEncryptionParameters, recoveryRSAPrivateKey, recoveryKey);
+    }
+
+    /**
+     * Returns the user's account recovery parameters.
+     *
+     * @returns {?UserRecoveryInitializationParameters}
+     */
+    getRecoveryParameters(){
+        return this.#user === null ? null : new UserRecoveryInitializationParameters({
+            recoveryRSAPrivateKeyEncryptionParameters: this.#user.getRecoveryRSAPrivateKeyEncryptionParameters(),
+            recoveryRSAPrivateKey: this.#user.getRecoveryRSAPrivateKey()
+        });
+    }
+
+    /**
+     * Initializes a new user recovery session.
+     *
+     * @param {string} recoveryKey
+     * @param {ClientTrackingInfo} clientTrackingInfo
+     * @param {number} [ttl=3600]
+     *
+     * @returns {Promise<UserRecoverySession>}
+     *
+     * @throws {IllegalArgumentException} If an invalid client tracking info object is given.
+     * @throws {IllegalArgumentException} If an invalid recovery key is given.
+     * @throws {IllegalArgumentException} If an invalid TTL value is given.
+     */
+    async initUserRecoverySession(recoveryKey, clientTrackingInfo, ttl = 3600){
+        if ( recoveryKey === '' || typeof recoveryKey !== 'string' ){
+            throw new IllegalArgumentException('Invalid password.');
+        }
+        if ( !PasswordUtils.comparePassword(recoveryKey, this.#user.getRecoveryKey()) ){
+            throw new UnauthorizedHTTPException('Recovery key mismatch.');
+        }
+        return await new UserRecoverySessionService().create(this.#user, clientTrackingInfo, ttl);
     }
 }
 

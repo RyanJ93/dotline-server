@@ -3,8 +3,9 @@
 /**
  * @typedef ClientTrackingInfoProperties
  *
+ * @property {GeoLocation} location
  * @property {string} browserName
- * @property {string} location
+ * @property {string} userAgent
  * @property {string} OSName
  * @property {string} ip
  */
@@ -17,6 +18,11 @@ class ClientTrackingInfo {
 
     /**
      * @type {string}
+     */
+    #userAgent;
+
+    /**
+     * @type {GeoLocation}
      */
     #location;
 
@@ -37,6 +43,7 @@ class ClientTrackingInfo {
      */
     constructor(properties){
         this.#browserName = properties.browserName;
+        this.#userAgent = properties.userAgent;
         this.#location = properties.location;
         this.#OSName = properties.OSName;
         this.#ip = properties.ip;
@@ -52,9 +59,18 @@ class ClientTrackingInfo {
     }
 
     /**
-     * Returns the tracked client's location.
+     * Returns the tracked client's browser user-agent string.
      *
      * @returns {string}
+     */
+    getUserAgent(){
+        return this.#userAgent;
+    }
+
+    /**
+     * Returns the tracked client's location.
+     *
+     * @returns {GeoLocation}
      */
     getLocation(){
         return this.#location;

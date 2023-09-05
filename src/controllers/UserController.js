@@ -1,7 +1,13 @@
 'use strict';
 
+import UserRegenerateRecoveryKeyHTTPForm from '../forms/UserRegenerateRecoveryKeyHTTPForm.js';
+import UserInitAccountRecoveryHTTPForm from '../forms/UserInitAccountRecoveryHTTPForm.js';
+import UserRecoverySessionService from '../services/UserRecoverySessionService.js';
+import UserRecoverAccountHTTPForm from '../forms/UserRecoverAccountHTTPForm.js';
 import UserVerifyUsernameHTTPForm from '../forms/UserVerifyUsernameHTTPForm.js';
 import UserChangePasswordHTTPForm from '../forms/UserChangePasswordHTTPForm.js';
+import UserCompositeRSAParameters from '../DTOs/UserCompositeRSAParameters.js';
+import ClientTrackingService from '../services/ClientTrackingService.js';
 import AESEncryptionParameters from '../DTOs/AESEncryptionParameters.js';
 import AccessTokenService from '../services/AccessTokenService.js';
 import UserSignupHTTPForm from '../forms/UserSignupHTTPForm.js';
@@ -30,14 +36,14 @@ class UserController extends Controller {
      * @returns {Promise<void>}
      */
     async signup(){
-        const userSignupHTTPForm = new UserSignupHTTPForm(), userService = new UserService();
-        userSignupHTTPForm.validate(this._request.body);
-        const { RSAPublicKey, RSAPrivateKey, username, password } = this._request.body;
-        const RSAPrivateKeyEncryptionParameters = AESEncryptionParameters.makeFromHTTPRequest(this._request, 'RSAPrivateKeyEncryptionParameters');
-        const user = await userService.signup(username, password, RSAPublicKey, RSAPrivateKey, RSAPrivateKeyEncryptionParameters);
-        const accessToken = await userService.generateAccessToken(user, this._request);
+        new UserSignupHTTPForm().validate(this._request.body);
+        const clientTrackingInfo = await new ClientTrackingService().getClientTrackingInfoByHTTPRequest(this._request);
+        const userCompositeRSAParameters = UserCompositeRSAParameters.makeFromHTTPRequest(this._request);
+        const userService = new UserService(), { username, password } = this._request.body;
+        await userService.signup(username, password, userCompositeRSAParameters);
+        const accessToken = await userService.generateAccessToken(clientTrackingInfo);
         this._sendSuccessResponse(200, 'SUCCESS', {
-            user: user.toJSON(true),
+            user: userService.getUser().toJSON(true),
             accessToken: accessToken
         });
     }
@@ -59,11 +65,12 @@ class UserController extends Controller {
             }
         }
         if ( user === null ){
-            user = await userService.authenticateWithCredentials(username, password);
-            accessToken = await userService.generateAccessToken(user, this._request);
+            const clientTrackingInfo = await new ClientTrackingService().getClientTrackingInfoByHTTPRequest(this._request);
+            await userService.authenticateWithCredentials(username, password);
+            accessToken = await userService.generateAccessToken(clientTrackingInfo);
         }
         this._sendSuccessResponse(200, 'SUCCESS', {
-            user: user.toJSON(true),
+            user: userService.getUser().toJSON(true),
             accessToken: accessToken
         });
     }
@@ -116,12 +123,47 @@ class UserController extends Controller {
 
     async changePassword(){
         new UserChangePasswordHTTPForm().validate(this._request.body);
+        const { RSAPrivateKey, newPassword, currentPassword } = this._request.body, userService = new UserService(this._request.authenticatedUser);
         const RSAPrivateKeyEncryptionParameters = AESEncryptionParameters.makeFromHTTPRequest(this._request, 'RSAPrivateKeyEncryptionParameters');
-        const { RSAPrivateKey, newPassword, currentPassword } = this._request.body;
-        const userService = new UserService(this._request.authenticatedUser);
         await userService.changePassword(currentPassword, newPassword, RSAPrivateKey, RSAPrivateKeyEncryptionParameters);
         await new AccessTokenService().deleteUserTokens(this._request.authenticatedUser, this._request.accessToken);
         this._sendSuccessResponse();
+    }
+
+    async regenerateRecoveryKey(){
+        new UserRegenerateRecoveryKeyHTTPForm().validate(this._request.body);
+        const aesEncryptionParameters = AESEncryptionParameters.makeFromHTTPRequest(this._request, 'recoveryRSAPrivateKeyEncryptionParameters');
+        const { recoveryRSAPrivateKey, recoveryKey } = this._request.body, userService = new UserService(this._request.authenticatedUser);
+        await userService.regenerateRecoveryKey(aesEncryptionParameters, recoveryRSAPrivateKey, recoveryKey);
+        this._sendSuccessResponse();
+    }
+
+    async initAccountRecovery(){
+        new UserInitAccountRecoveryHTTPForm().validate(this._request.body);
+        const clientTrackingInfo = await new ClientTrackingService().getClientTrackingInfoByHTTPRequest(this._request);
+        const { username, recoveryKey } = this._request.body, userService = await UserService.makeFromEntity(username);
+        const userRecoverySession = await userService.initUserRecoverySession(recoveryKey, clientTrackingInfo);
+        this._sendSuccessResponse(200, 'SUCCESS', {
+            recoveryParameters: userService.getRecoveryParameters().toJSON(),
+            sessionToken: userRecoverySession.getSessionToken()
+        });
+    }
+
+    async recoverAccount(){
+        new UserRecoverAccountHTTPForm().validate(this._request.body);
+        const RSAPrivateKeyEncryptionParameters = AESEncryptionParameters.makeFromHTTPRequest(this._request, 'RSAPrivateKeyEncryptionParameters');
+        const userRecoverySessionService = await UserRecoverySessionService.makeFromSessionToken(this._request.body.sessionToken);
+        const clientTrackingInfo = await new ClientTrackingService().getClientTrackingInfoByHTTPRequest(this._request);
+        const userService = new UserService(userRecoverySessionService.getUserRecoverySession().getUser());
+        const { RSAPrivateKey, password } = this._request.body;
+        await userService.updatePassword(password, RSAPrivateKey, RSAPrivateKeyEncryptionParameters);
+        const accessToken = await userService.generateAccessToken(clientTrackingInfo);
+        await userRecoverySessionService.markAsFulfilled(true);
+        await new AccessTokenService().deleteUserTokens(userService.getUser(), accessToken.getAccessToken());
+        this._sendSuccessResponse(200, 'SUCCESS', {
+            user: userService.getUser().toJSON(true),
+            accessToken: accessToken
+        });
     }
 }
 

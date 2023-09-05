@@ -16,8 +16,8 @@ class ClientTrackingService extends Service {
      * @returns {Promise<?GeoLocation>}
      */
     async #lookupGeoLocationByIP(ip){
-        const url = 'http://ip-api.com/json/' + ip, locationComponents = [];
-        const response = await axios.get(url);
+        const url = ClientTrackingService.GEO_LOCATION_SERVICE_ENDPOINT_URL.replace('[IP]', ip);
+        const locationComponents = [], response = await axios.get(url);
         if ( response.status !== 200 || response.data.status !== 'success' ){
             Logger.getLogger().warn('Cannot get geo location for IP ' + ip);
             return null;
@@ -51,6 +51,7 @@ class ClientTrackingService extends Service {
         const browserName = ( auParser.getBrowser().name ?? '' );
         const OSName = ( auParser.getOS().name ?? '' );
         return new ClientTrackingInfo({
+            userAgent: ( HTTPRequest.headers['user-agent'] ?? '' ),
             browserName: browserName,
             ip: HTTPRequest.ip,
             location: location,
@@ -58,5 +59,13 @@ class ClientTrackingService extends Service {
         });
     }
 }
+
+/**
+ * @constant {string}
+ */
+Object.defineProperty(ClientTrackingService, 'GEO_LOCATION_SERVICE_ENDPOINT_URL', {
+    value: 'http://ip-api.com/json/[IP]',
+    writable: false
+});
 
 export default ClientTrackingService;
