@@ -2,7 +2,6 @@
 
 import HMACSigningParameters from '../DTOs/HMACSigningParameters.js';
 import AESStaticParameters from '../DTOs/AESStaticParameters.js';
-import Message from './Message.js';
 import Model from './Model.js';
 
 class Conversation extends Model {
@@ -13,7 +12,6 @@ class Conversation extends Model {
             tableName: 'conversations',
             keys: ['id'],
             fields: {
-                lastMessage: { name: 'last_message_id', relation: { model: Message, mapping: { last_message_id: { foreign: 'id', method: 'getID' } }} },
                 encryptionParameters: { name: 'encryption_parameters', UDTImplementation: AESStaticParameters },
                 signingParameters: { name: 'signing_parameters', UDTImplementation: HMACSigningParameters },
                 members: { name: 'members', type: 'map' },
@@ -54,15 +52,6 @@ class Conversation extends Model {
 
     getSigningParameters(){
         return this._attributes.signingParameters ?? null;
-    }
-
-    setLastMessage(lastMessage){
-        this._attributes.lastMessage = lastMessage;
-        return this;
-    }
-
-    getLastMessage(){
-        return this._attributes.lastMessage ?? null;
     }
 
     setMembers(members){

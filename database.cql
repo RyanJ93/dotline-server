@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS user_recovery_sessions (session_token ASCII, user_id 
 -- CREATE CUSTOM INDEX IF NOT EXISTS user_recovery_session_by_user_id ON user_recovery_sessions (user_id) USING 'StorageAttachedIndex';
 CREATE CUSTOM INDEX IF NOT EXISTS user_recovery_session_by_user_id ON user_recovery_sessions (user_id) USING 'org.apache.cassandra.index.sasi.SASIIndex';
 
-CREATE TABLE IF NOT EXISTS conversations (id TIMEUUID, name VARCHAR, encryption_parameters FROZEN<aes_static_parameters>, signing_parameters FROZEN<hmac_signing_parameters>, members MAP<VARCHAR, FROZEN<conversation_member>>, last_message_id TIMEUUID /*DEP*/, PRIMARY KEY (id));
+CREATE TABLE IF NOT EXISTS conversations (id TIMEUUID, name VARCHAR, encryption_parameters FROZEN<aes_static_parameters>, signing_parameters FROZEN<hmac_signing_parameters>, members MAP<VARCHAR, FROZEN<conversation_member>>, PRIMARY KEY (id));
 -- CREATE CUSTOM INDEX IF NOT EXISTS conversations_by_member ON conversations (members) USING 'StorageAttachedIndex';
 CREATE CUSTOM INDEX IF NOT EXISTS conversations_by_member ON conversations (members) USING 'org.apache.cassandra.index.sasi.SASIIndex';
 
