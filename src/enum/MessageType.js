@@ -8,6 +8,7 @@
  * @enum {string}
  */
 export default Object.freeze({
+    VOICE_MESSAGE: 'voice-message',
     LOCATION: 'location',
     STICKER: 'sticker',
     TEXT: 'text'
