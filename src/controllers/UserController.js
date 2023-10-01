@@ -16,6 +16,7 @@ import UserLoginHTTPForm from '../forms/UserLoginHTTPForm.js';
 import UserEditHTTPForm from '../forms/UserEditHTTPForm.js';
 import UserService from '../services/UserService.js';
 import Controller from './Controller.js';
+import StringUtils from '../utils/StringUtils.js';
 
 class UserController extends Controller {
     /**
@@ -102,7 +103,10 @@ class UserController extends Controller {
      */
     async search(){
         new UserSearchHTTPForm().validate(this._request.query);
-        let userList = await new UserService().searchByUsername(this._request.query.username);
+        let userList = [], { username } = this._request.query;
+        if ( StringUtils.isValidUsername(username) ){
+            userList = await new UserService().searchByUsername(username);
+        }
         const authenticatedUserID = this._request.authenticatedUser.getID().toString();
         userList = userList.filter((user) => user.getID().toString() !== authenticatedUserID);
         this._sendSuccessResponse(200, 'SUCCESS', { userList: userList });
