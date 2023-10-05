@@ -11,7 +11,7 @@ class UserInitAccountRecoveryHTTPForm extends HTTPForm {
 
         this._mapping = {
             recoveryKey: { rules: { ['non-empty-string']: { msg: 'You must provide a valid recovery key.' } }, isRequired: true },
-            username: { rules: { ['non-empty-string']: { msg: 'You must provide a valid username.' } }, isRequired: true }
+            username: { rules: { ['username']: { msg: 'You must provide a valid username.' } }, isRequired: true }
         };
     }
 }

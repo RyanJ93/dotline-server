@@ -20,8 +20,8 @@ class UserSignupHTTPForm extends HTTPForm {
             RSAPrivateKey: { rules: { ['non-empty-string']: { msg: 'You must provide a valid RSA private key.' } }, isRequired: true },
             RSAPublicKey: { rules: { ['non-empty-string']: { msg: 'You must provide a valid RSA public key.' } }, isRequired: true },
             recoveryKey: { rules: { ['non-empty-string']: { msg: 'You must provide a valid recovery key.' } }, isRequired: true },
-            username: { rules: { ['non-empty-string']: { msg: 'You must provide a valid username.' } }, isRequired: true },
-            password: { rules: { ['non-empty-string']: { msg: 'You must provide a valid password.' } }, isRequired: true }
+            password: { rules: { ['non-empty-string']: { msg: 'You must provide a valid password.' } }, isRequired: true },
+            username: { rules: { ['username']: { msg: 'You must provide a valid username.' } }, isRequired: true }
         };
     }
 }

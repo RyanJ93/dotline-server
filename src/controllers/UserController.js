@@ -120,7 +120,9 @@ class UserController extends Controller {
     async edit(){
         new UserEditHTTPForm().validate(this._request.body);
         const userService = new UserService(this._request.authenticatedUser);
-        const { username, name, surname } = this._request.body;
+        const surname = this._request.body.surname ?? null;
+        const name = this._request.body.name ?? null;
+        const username = this._request.body.username;
         await userService.edit(username, name, surname);
         this._sendSuccessResponse(200, 'SUCCESS', { user: userService.getUser().toJSON(true) });
     }

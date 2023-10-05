@@ -10,8 +10,8 @@ class UserLoginHTTPForm extends HTTPForm {
         super();
 
         this._mapping = {
-            username: { rules: { ['non-empty-string']: { msg: 'You must provide a valid username.' } }, isRequired: true },
-            password: { rules: { ['non-empty-string']: { msg: 'You must provide a valid password.' } }, isRequired: true }
+            password: { rules: { ['non-empty-string']: { msg: 'You must provide a valid password.' } }, isRequired: true },
+            username: { rules: { ['username']: { msg: 'You must provide a valid username.' } }, isRequired: true }
         };
     }
 }
