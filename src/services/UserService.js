@@ -230,8 +230,8 @@ class UserService extends Service {
     /**
      * Updates the defined user.
      *
-     * @param {string} username
-     * @param {string} name
+     * @param {?string} username
+     * @param {?string} name
      * @param {string} surname
      *
      * @returns {Promise<void>}
