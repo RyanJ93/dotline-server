@@ -10,9 +10,9 @@ class UserEditHTTPForm extends HTTPForm {
         super();
 
         this._mapping = {
-            username: { rules: { ['non-empty-string']: { msg: 'You must provide a valid username.' } }, isRequired: true },
-            surname: { rules: { ['non-empty-string']: { msg: 'You must provide a valid surname.' } }, isRequired: false },
-            name: { rules: { ['non-empty-string']: { msg: 'You must provide a valid name.' } }, isRequired: false }
+            surname: { rules: { ['string-length']: { msg: 'You must provide a valid surname.', params: { maxLength: 25 } } }, isRequired: false },
+            name: { rules: { ['string-length']: { msg: 'You must provide a valid name.', params: { maxLength: 25 } } }, isRequired: false },
+            username: { rules: { ['username']: { msg: 'You must provide a valid username.' } }, isRequired: true }
         };
     }
 }

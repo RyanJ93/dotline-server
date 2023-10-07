@@ -42,7 +42,7 @@ class WebSocketServerManager extends Injectable {
      *
      * @returns {Promise<void>}
      */
-    async #handleClientError(error, client, transactionID){console.log(error);
+    async #handleClientError(error, client, transactionID){
         let responseProperties = { timestamp: new Date(), status: 'ERROR', code: 400 };
         if ( transactionID !== '' && typeof transactionID === 'string' ){
             responseProperties.transactionID = transactionID;
@@ -147,7 +147,9 @@ class WebSocketServerManager extends Injectable {
         this.#webSocketServer.on('connection', (client) => {
             client.on('message', (data) => this.#handleClientMessage(client, data));
             client.on('close', () => this.#detachClient(client));
+            client.on('pong', () => client.isAlive = true);
             client.uuid = crypto.randomUUID();
+            client.connectionDate = new Date();
         });
     }
 
@@ -157,7 +159,7 @@ class WebSocketServerManager extends Injectable {
     #setupHeartbeatChecker(){
         this.#heartbeatCheckerIntervalID = setInterval(() => {
             this.runHeartbeatCheck();
-        }, 10000);
+        }, WebSocketServerManager.HEARTHBEAT_INTERVAL_DELAY);
     }
 
     /**
@@ -304,7 +306,15 @@ class WebSocketServerManager extends Injectable {
      * @returns {WebSocketServerManager}
      */
     runHeartbeatCheck(){
+        const currentTimestamp = new Date().getTime();
         this.#webSocketServer.clients.forEach((client) => {
+            if ( typeof client.authenticatedUserAccessToken !== 'string' ){
+                const timeDiff = currentTimestamp - client.connectionDate.getTime();
+                if ( timeDiff > WebSocketServerManager.AUTHENTICATION_WAIT_TIMEOUT ){
+                    this.#detachClient(client);
+                    return client.terminate();
+                }
+            }
             if ( client.isAlive === false ){
                 this.#detachClient(client);
                 return client.terminate();
@@ -357,5 +367,15 @@ class WebSocketServerManager extends Injectable {
         }
     }
 }
+
+/**
+ * @constant {number}
+ */
+Object.defineProperty(WebSocketServerManager, 'AUTHENTICATION_WAIT_TIMEOUT', { value: 60000, writable: false });
+
+/**
+ * @constant {number}
+ */
+Object.defineProperty(WebSocketServerManager, 'HEARTHBEAT_INTERVAL_DELAY', { value: 30000, writable: false });
 
 export default WebSocketServerManager;
