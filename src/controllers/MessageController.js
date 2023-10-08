@@ -3,6 +3,7 @@
 import ForbiddenHTTPException from '../exceptions/ForbiddenHTTPException.js';
 import MessageSendHTTPForm from '../forms/MessageSendHTTPForm.js';
 import MessageEditHTTPForm from '../forms/MessageEditHTTPForm.js';
+import PermissionService from '../services/PermissionService.js';
 import UploadedAttachment from '../DTOs/UploadedAttachment.js';
 import MessageService from '../services/MessageService.js';
 import Controller from './Controller.js';
@@ -17,6 +18,9 @@ class MessageController extends Controller {
         const user = this._request.authenticatedUser, conversationID = this._request.params.conversationID;
         new MessageSendHTTPForm().validate(Object.assign(this._request.body, this._request.files));
         const messageService = await MessageService.makeFromEntity(user, conversationID);
+        await new PermissionService().ensurePermissions(['CONVERSATION_ACCESS'], user, {
+            conversation: messageService.getConversation()
+        });
         const attachments = UploadedAttachment.makeListFromHTTPRequest(this._request);
         const encryptionIV = this._request.body.encryptionIV ?? null;
         const signature = this._request.body.signature ?? null;
@@ -35,9 +39,9 @@ class MessageController extends Controller {
         const user = this._request.authenticatedUser, { conversationID, messageID } = this._request.params;
         const messageService = await MessageService.makeFromEntity(user, conversationID, messageID);
         new MessageEditHTTPForm().validate(Object.assign(this._request.body, this._request.files));
-        if ( messageService.getMessage().getUserID().toString() !== user.getID().toString() ){
-            throw new ForbiddenHTTPException('Cannot edit a message sent by another user.');
-        }
+        await new PermissionService().ensurePermissions(['MESSAGE_EDIT'], user, {
+            message: messageService.getMessage()
+        });
         const encryptionIV = this._request.body.encryptionIV ?? null;
         const signature = this._request.body.signature ?? null;
         const content = this._request.body.content ?? '';
@@ -53,6 +57,9 @@ class MessageController extends Controller {
     async list(){
         const user = this._request.authenticatedUser, conversationID = this._request.params.conversationID;
         const messageService = await MessageService.makeFromEntity(user, conversationID);
+        await new PermissionService().ensurePermissions(['CONVERSATION_ACCESS'], user, {
+            conversation: messageService.getConversation()
+        });
         const limit = parseInt(this._request.query.limit ?? 250);
         const startingID = this._request.query.startingID ?? null;
         const endingID = this._request.query.endingID ?? null;
@@ -63,6 +70,9 @@ class MessageController extends Controller {
     async listCommits(){
         const user = this._request.authenticatedUser, conversationID = this._request.params.conversationID;
         const messageService = await MessageService.makeFromEntity(user, conversationID);
+        await new PermissionService().ensurePermissions(['CONVERSATION_ACCESS'], user, {
+            conversation: messageService.getConversation()
+        });
         const limit = parseInt(this._request.query.limit ?? 250);
         const startingID = this._request.query.startingID ?? null;
         const endingID = this._request.query.endingID ?? null;
@@ -79,6 +89,10 @@ class MessageController extends Controller {
         const user = this._request.authenticatedUser, { conversationID, messageID } = this._request.params;
         const messageService = await MessageService.makeFromEntity(user, conversationID, messageID);
         const deleteForEveryone = this._request.query.deleteForEveryone === '1';
+        await new PermissionService().ensurePermissions(['MESSAGE_DELETE'], user, {
+            message: messageService.getMessage(),
+            deleteForEveryone: deleteForEveryone
+        });
         await ( deleteForEveryone ? messageService.delete() : messageService.deleteForUser(user) );
         this._sendSuccessResponse();
     }
@@ -91,6 +105,9 @@ class MessageController extends Controller {
     async markAsRead(){
         const user = this._request.authenticatedUser, { conversationID, messageID } = this._request.params;
         const messageService = await MessageService.makeFromEntity(user, conversationID, messageID);
+        await new PermissionService().ensurePermissions(['CONVERSATION_ACCESS'], user, {
+            conversation: messageService.getConversation()
+        });
         await messageService.markAsRead(user);
         this._sendSuccessResponse();
     }

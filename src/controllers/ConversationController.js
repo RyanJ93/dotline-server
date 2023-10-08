@@ -2,11 +2,12 @@
 
 import ConversationMemberPlaceholder from '../DTOs/ConversationMemberPlaceholder.js';
 import ConversationCreateHTTPForm from '../forms/ConversationCreateHTTPForm.js';
+import MessageCommitService from '../services/MessageCommitService.js';
 import ConversationService from '../services/ConversationService.js';
 import HMACSigningParameters from '../DTOs/HMACSigningParameters.js';
+import PermissionService from '../services/PermissionService.js';
 import AESStaticParameters from '../DTOs/AESStaticParameters.js';
 import Controller from './Controller.js';
-import MessageCommitService from '../services/MessageCommitService.js';
 
 class ConversationController extends Controller {
     /**
@@ -17,6 +18,9 @@ class ConversationController extends Controller {
     async get(){
         const conversationID = this._request.params.conversationID, user = this._request.authenticatedUser;
         const conversationService = await ConversationService.makeFromEntity(conversationID, user);
+        await new PermissionService().ensurePermissions(['CONVERSATION_ACCESS'], user, {
+            conversation: conversationService.getConversation()
+        });
         this._sendSuccessResponse(200, 'SUCCESS', { conversation: conversationService.getConversation() });
     }
 
@@ -60,6 +64,10 @@ class ConversationController extends Controller {
         const conversationID = this._request.params.conversationID, user = this._request.authenticatedUser;
         const conversationService = await ConversationService.makeFromEntity(conversationID, user);
         const deleteForEveryone = this._request.query.deleteForEveryone === '1';
+        await new PermissionService().ensurePermissions(['CONVERSATION_DELETE'], user, {
+            conversation: conversationService.getConversation(),
+            deleteForEveryone: deleteForEveryone
+        });
         await ( deleteForEveryone ? conversationService.delete() : conversationService.deleteForUser(user) );
         this._sendSuccessResponse();
     }
@@ -67,6 +75,9 @@ class ConversationController extends Controller {
     async markAsRead(){
         const conversationID = this._request.params.conversationID, user = this._request.authenticatedUser;
         const conversationService = await ConversationService.makeFromEntity(conversationID, user);
+        await new PermissionService().ensurePermissions(['CONVERSATION_ACCESS'], user, {
+            conversation: conversationService.getConversation()
+        });
         await conversationService.markAsRead(user);
         this._sendSuccessResponse();
     }
