@@ -1,6 +1,5 @@
 'use strict';
 
-import ForbiddenHTTPException from '../exceptions/ForbiddenHTTPException.js';
 import MessageSendHTTPForm from '../forms/MessageSendHTTPForm.js';
 import MessageEditHTTPForm from '../forms/MessageEditHTTPForm.js';
 import PermissionService from '../services/PermissionService.js';
