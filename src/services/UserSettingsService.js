@@ -123,6 +123,7 @@ class UserSettingsService extends Service {
             throw new IllegalArgumentException('Invalid theme.');
         }
         await this.#userSettingsRepository.edit(this.#userSettings, locale, theme);
+        this._logger.info('Updated settings for user ' + this.#userSettings.getUser().getID());
     }
 }
 

@@ -41,8 +41,7 @@ class MessageCommitService extends Service {
 
         this.#messageCommitStatRepository = Injector.inject('MessageCommitStatRepository');
         this.#messageCommitRepository = Injector.inject('MessageCommitRepository');
-        this.setConversation(conversation);
-        this.setMessage(message);
+        this.setConversation(conversation).setMessage(message);
     }
 
     /**
@@ -125,6 +124,7 @@ class MessageCommitService extends Service {
             this.#messageCommitRepository.removeMessageCommitsByConversation(this.#conversation),
             this.#messageCommitStatRepository.dropCounterForConversation(this.#conversation)
         ]);
+        this._logger.info('Removed all the message commits for conversation ' + this.#conversation.getID());
     }
 
     /**

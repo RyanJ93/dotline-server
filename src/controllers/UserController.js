@@ -15,8 +15,8 @@ import UserSearchHTTPForm from '../forms/UserSearchHTTPForm.js';
 import UserLoginHTTPForm from '../forms/UserLoginHTTPForm.js';
 import UserEditHTTPForm from '../forms/UserEditHTTPForm.js';
 import UserService from '../services/UserService.js';
-import Controller from './Controller.js';
 import StringUtils from '../utils/StringUtils.js';
+import Controller from './Controller.js';
 
 class UserController extends Controller {
     /**

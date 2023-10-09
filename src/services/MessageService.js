@@ -11,7 +11,6 @@ import MessageFlagService from './MessageFlagService.js';
 import MessageFlagName from '../enum/MessageFlagName.js';
 import AttachmentService from './AttachmentService.js';
 import Conversation from '../models/Conversation.js';
-import MessageType from '../enum/MessageType.js';
 import Injector from '../facades/Injector.js';
 import Message from '../models/Message.js';
 import User from '../models/User.js';
@@ -131,8 +130,7 @@ class MessageService extends Service {
         super();
 
         this.#messageRepository = Injector.inject('MessageRepository');
-        this.setConversation(conversation);
-        this.setMessage(message);
+        this.setConversation(conversation).setMessage(message);
     }
 
     /**
@@ -210,7 +208,7 @@ class MessageService extends Service {
     }
 
     /**
-     * 
+     * Lists message commit for the defined conversation and the given user.
      *
      * @param {User} user
      * @param {number} [limit=250]
@@ -260,25 +258,8 @@ class MessageService extends Service {
      * @throws {InvalidOperationException} If the message is empty.
      */
     async send(user, content, type, signature, encryptionIV, attachmentList = []){
-        if ( Object.values(MessageType).indexOf(type) === -1 ){
-            throw new IllegalArgumentException('Invalid or unsupported message type.');
-        }
-        if ( content !== '' ){
-            if ( encryptionIV === '' || typeof encryptionIV !== 'string' ){
-                throw new IllegalArgumentException('Invalid encryption IV.');
-            }
-            if ( signature === '' || typeof signature !== 'string' ){
-                throw new IllegalArgumentException('Invalid signature.');
-            }
-        }
-        if ( typeof content !== 'string' ){
-            throw new IllegalArgumentException('Invalid content.');
-        }
         if ( !Array.isArray(attachmentList) ){
             throw new IllegalArgumentException('Invalid attachment list.');
-        }
-        if ( !( user instanceof User ) ){
-            throw new IllegalArgumentException('Invalid user instance.');
         }
         if ( content === '' && attachmentList.length === 0 ){
             throw new InvalidOperationException('Empty messages are not allowed.');
@@ -289,14 +270,23 @@ class MessageService extends Service {
         await new ConversationService(this.#conversation).ensureConversationMembers(true);
         const otherMemberList = Object.keys(this.#conversation.getMembers()).filter((userID) => userID !== user.getID().toString());
         this.#message = await this.#messageRepository.create(this.#conversation, user, content, type, signature, encryptionIV);
-        const processedAttachmentList = await new AttachmentService(this.#message).processFileAttachments(attachmentList);
+        let message = 'Sent a new message (with type "' + type + '") by user ' + user.getID() + ' in conversation ';
         await new MessageCommitService(this.#conversation, this.#message).commitAction(MessageCommitAction.CREATE);
-        await this.#messageRepository.updateAttachments(this.#message, processedAttachmentList);
+        this._logger.debug(message + this.#conversation.getID() + ' having ID ' + this.#message.getID());
+        if ( attachmentList.length > 0 ){
+            // Process attachments for the created message.
+            const processedAttachmentList = await new AttachmentService(this.#message).processFileAttachments(attachmentList);
+            await this.#messageRepository.updateAttachments(this.#message, processedAttachmentList);
+            this._logger.debug('Attached ' + attachmentList.length + ' attachments to message ' + this.#message.getID());
+        }
         this.#message.addVirtualAttribute('read', false);
         await this.#processMemberRelatedEntities(user);
         this.#processCreatedMessageAttributes();
+        // Deliver created message through "message" event to every user involved in the conversation.
         this._eventBroker.emit('message', otherMemberList, this.#message);
         this._eventBroker.emit('message', [user.getID().toString()], this.#message.addVirtualAttribute('read', true));
+        message = 'Delivered message creation event to clients for message ' + this.#message.getID();
+        this._logger.debug(message + ' in conversation ' + this.#conversation.getID());
         return this.#message;
     }
 
@@ -315,17 +305,6 @@ class MessageService extends Service {
      * @throws {InvalidOperationException} If the message is empty.
      */
     async edit(content, signature, encryptionIV){
-        if ( typeof content !== 'string' ){
-            throw new IllegalArgumentException('Invalid content.');
-        }
-        if ( content !== '' ){
-            if ( encryptionIV === '' || typeof encryptionIV !== 'string' ){
-                throw new IllegalArgumentException('Invalid encryption IV.');
-            }
-            if ( signature === '' || typeof signature !== 'string' ){
-                throw new IllegalArgumentException('Invalid signature.');
-            }
-        }
         if ( content === '' && ( this.#message.getAttachments()?.length ?? 0 ) === 0 ){
             throw new InvalidOperationException('Empty messages are not allowed.');
         }
@@ -333,13 +312,16 @@ class MessageService extends Service {
             encryptionIV = signature = null;
         }
         await this.#messageRepository.edit(this.#message, content, signature, encryptionIV);
+        this._logger.debug('Edited message ' + this.#message.getID());
         this.#processCreatedMessageAttributes();
         await new MessageCommitService(this.#conversation, this.#message).commitAction(MessageCommitAction.EDIT);
+        // Deliver message changes through "messageEdit" event to every user involved in the conversation.
         await Promise.all(Object.keys(this.#conversation.getMembers()).map(async (memberID) => {
             const userMessage = this.#message.clone();
             await this.#processMessageFlags(userMessage, new User().setID(memberID));
             this._eventBroker.emit('messageEdit', [memberID], userMessage);
         }));
+        this._logger.debug('Delivered message edit event to clients for message ' + this.#message.getID());
         return this.#message;
     }
 
@@ -356,16 +338,25 @@ class MessageService extends Service {
         if ( !( user instanceof User ) ){
             throw new IllegalArgumentException('Invalid user instance.');
         }
+        this._logger.debug('Deleting message ' + this.#message.getID() + ' for user ' + user.getID() + '...');
         const messageFlagService = new MessageFlagService(this.#message);
         // Check if the message has been removed for all the conversation's members, if yes then completely remove it.
         const isFlaggedForEveryMember = await messageFlagService.isFlaggedForEveryMember(MessageFlagName.DELETED);
         if ( isFlaggedForEveryMember ){
+            this._logger.debug('Message ' + this.#message.getID() + ' has been removed for every conversation member, removing it');
             return await this.delete();
         }
         // Mark the message as removed for the given user only.
-        await new MessageCommitService(this.#conversation, this.#message).commitAction(MessageCommitAction.DELETE, user);
-        await messageFlagService.addMessageFlagsForUser([MessageFlagName.DELETED], user);
+        this._logger.debug('Marking message ' + this.#message.getID() + ' as deleted for user ' + user.getID() + '...');
+        await Promise.all([
+            new MessageCommitService(this.#conversation, this.#message).commitAction(MessageCommitAction.DELETE, user),
+            messageFlagService.addMessageFlagsForUser([MessageFlagName.DELETED], user),
+            new ConversationStatService(user).decrementCounter(this.#conversation)
+        ]);
+        // Deliver message deleted event to all the clients authenticated as the given user.
+        this._logger.info('Message ' + this.#message.getID() + ' deleted for user ' + user.getID());
         this._eventBroker.emit('messageDelete', [user.getID()], this.#message.getID(), this.#conversation.getID());
+        this._logger.debug('Delivered message delete event to clients for message ' + this.#message.getID() + ' and user ' + user.getID());
     }
 
     /**
@@ -376,13 +367,18 @@ class MessageService extends Service {
     async delete(){
         // Create a list of fake users in order to provide a list of user ID.
         const userList = Object.keys(this.#conversation.getMembers()).map((userID) => new User().setID(userID));
+        this._logger.debug('Deleting message ' + this.#message.getID() + '...');
         await new MessageFlagService(this.#message).removeMessageFlagsForMultipleUser(Object.values(MessageFlagName), userList);
         await Promise.all(userList.map((user => new ConversationStatService(user).decrementCounter(this.#conversation))));
         await new MessageCommitService(this.#conversation, this.#message).commitAction(MessageCommitAction.DELETE);
+        this._logger.debug('Deleting attachments for message ' + this.#message.getID() + '...');
         const memberList = Object.keys(this.#conversation.getMembers());
         await new AttachmentService(this.#message).removeAttachments();
         await this.#messageRepository.delete(this.#message);
+        this._logger.info('Message ' + this.#message.getID() + ' deleted');
+        // Deliver message deleted event to all the clients authenticated as a member of the conversation the message belongs to.
         this._eventBroker.emit('messageDelete', memberList, this.#message.getID(), this.#conversation.getID());
+        this._logger.debug('Delivered message delete event to clients for message ' + this.#message.getID());
         this.#message = null;
     }
 
@@ -392,9 +388,11 @@ class MessageService extends Service {
      * @returns {Promise<void>}
      */
     async deleteConversationMessages(){
+        this._logger.debug('Deleting every message in conversation ' + this.#conversation.getID() + '...');
         await new MessageCommitService(this.#conversation).removeMessageCommitsByConversation();
         await new AttachmentService().removeConversationAttachments(this.#conversation);
         await this.#messageRepository.deleteConversationMessages(this.#conversation);
+        this._logger.info('Messages in conversation' + this.#conversation.getID() + ' removed');
     }
 
     /**
@@ -407,12 +405,10 @@ class MessageService extends Service {
      * @throws {IllegalArgumentException} If and invalid user instance is given.
      */
     async markAsRead(user){
-        if ( !( user instanceof User ) ){
-            throw new IllegalArgumentException('Invalid user instance.');
-        }
         await new MessageFlagService(this.#message).removeMessageFlagsForUser([MessageFlagName.UNREAD], user);
-        await this.#processMessageFlags( this.#message, user);
+        await this.#processMessageFlags(this.#message, user);
         this._eventBroker.emit('messageEdit', [user.getID()], this.#message);
+        this._logger.debug('Message ' + this.#message.getID() + ' marked as read for user ' + user.getID());
     }
 }
 

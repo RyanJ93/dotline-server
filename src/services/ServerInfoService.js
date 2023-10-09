@@ -1,7 +1,6 @@
 'use strict';
 
 import Config from '../facades/Config.js';
-import Logger from '../facades/Logger.js';
 import Service from './Service.js';
 
 /**
@@ -24,15 +23,15 @@ class ServerInfoService extends Service {
             serverParams = {};
         }
         if ( serverParams.maxMessageLength === null || isNaN(serverParams.maxMessageLength) || serverParams.maxMessageLength <= 0 ){
-            Logger.getLogger().warn('No valid max message length value specified, using default one.');
+            this._logger.warn('No valid max message length value specified, using default one.');
             serverParams.maxMessageLength = ServerInfoService.DEFAULT_MAX_MESSAGE_LENGTH;
         }
         if ( serverParams.maxFileSize === null || isNaN(serverParams.maxFileSize) || serverParams.maxFileSize <= 0 ){
-            Logger.getLogger().warn('No valid max file size value specified, using default one.');
+            this._logger.warn('No valid max file size value specified, using default one.');
             serverParams.maxFileSize = ServerInfoService.DEFAULT_MAX_FILE_SIZE;
         }
         if ( serverParams.maxFileCount === null || isNaN(serverParams.maxFileCount) || serverParams.maxFileCount < 0 ){
-            Logger.getLogger().warn('No valid max file count value specified, using default one.');
+            this._logger.warn('No valid max file count value specified, using default one.');
             serverParams.maxFileCount = ServerInfoService.DEFAULT_MAX_FILE_COUNT;
         }
         return serverParams;

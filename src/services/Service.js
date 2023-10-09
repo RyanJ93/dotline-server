@@ -2,6 +2,7 @@
 
 import RuntimeException from '../exceptions/RuntimeException.js';
 import Injector from '../facades/Injector.js';
+import Logger from '../facades/Logger.js';
 
 /**
  * @abstract
@@ -15,6 +16,13 @@ import Injector from '../facades/Injector.js';
     _eventBroker;
 
     /**
+     * @type {winston.Logger}
+     *
+     * @protected
+     */
+    _logger;
+
+    /**
      * The class constructor.
      *
      * @throws {RuntimeException} If directly instantiated.
@@ -25,6 +33,7 @@ import Injector from '../facades/Injector.js';
         }
 
         this._eventBroker = Injector.inject('EventBroker');
+        this._logger = Logger.getLogger();
     }
 }
 
