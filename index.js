@@ -2,6 +2,7 @@
 
 import FormValidationProvider from './src/providers/FormValidationProvider.js';
 import RepositoryProvider from './src/providers/RepositoryProvider.js';
+import PermissionProvider from './src/providers/PermissionProvider.js';
 import DatabaseProvider from './src/providers/DatabaseProvider.js';
 import ProviderManager from './src/support/ProviderManager.js';
 import ConfigProvider from './src/providers/ConfigProvider.js';
@@ -16,6 +17,7 @@ providerManager.register(new DatabaseProvider());
 providerManager.register(new LoggerProvider());
 providerManager.register(new ServerProvider());
 providerManager.register(new FormValidationProvider());
+providerManager.register(new PermissionProvider());
 providerManager.register(new RepositoryProvider());
 
 (async () => {

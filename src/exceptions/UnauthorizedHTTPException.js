@@ -8,7 +8,7 @@ class UnauthorizedHTTPException extends HTTPException {
     }
 
     getCode(){
-        return 403;
+        return 401;
     }
 }
 
