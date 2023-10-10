@@ -1,6 +1,7 @@
 'use strict';
 
 import ClientTrackingInfo from '../DTOs/ClientTrackingInfo.js';
+import HTTPRequestUtils from '../utils/HTTPRequestUtils.js';
 import Geolocation from '../DTOs/GeoLocation.js';
 import Logger from '../facades/Logger.js';
 import UAParser from 'ua-parser-js';
@@ -47,15 +48,16 @@ class ClientTrackingService extends Service {
      */
     async getClientTrackingInfoByHTTPRequest(HTTPRequest){
         const auParser = new UAParser(HTTPRequest.headers['user-agent'] ?? '');
-        const location = await this.#lookupGeoLocationByIP(HTTPRequest.ip);
+        const IPAddress = HTTPRequestUtils.extractIPAddress(HTTPRequest);
+        const location = await this.#lookupGeoLocationByIP(IPAddress);
         const browserName = ( auParser.getBrowser().name ?? '' );
         const OSName = ( auParser.getOS().name ?? '' );
         return new ClientTrackingInfo({
             userAgent: ( HTTPRequest.headers['user-agent'] ?? '' ),
             browserName: browserName,
-            ip: HTTPRequest.ip,
             location: location,
             OSName: OSName,
+            ip: IPAddress
         });
     }
 }
