@@ -95,7 +95,9 @@ class UserRecoverySessionService extends Service {
         }
         const sessionToken = CryptoUtils.generateRandomString(UserRecoverySessionService.SESSION_TOKEN_STRING_LENGTH);
         const expireDate = new Date(new Date().getTime() + ( ttl * 1000 ));
-        return this.#userRecoverySession = await this.#userRecoverySessionRepository.create(user, sessionToken, expireDate, clientTrackingInfo);
+        this.#userRecoverySession = await this.#userRecoverySessionRepository.create(user, sessionToken, expireDate, clientTrackingInfo);
+        this._logger.info('Created a new recovery session for user ' + user.getID());
+        return this.#userRecoverySession;
     }
 
     /**
@@ -135,6 +137,7 @@ class UserRecoverySessionService extends Service {
      */
     async markAsFulfilled(fulfilled = true){
         await this.#userRecoverySessionRepository.markAsFulfilled(this.#userRecoverySession, fulfilled);
+        this._logger.info('Recovery session marked as fulfilled for user ' + this.#userRecoverySession.getUser().getID());
     }
 }
 

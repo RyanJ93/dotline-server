@@ -6,6 +6,7 @@ import IllegalArgumentException from '../exceptions/IllegalArgumentException.js'
 import WebSocketMessage from '../DTOs/WebSocketMessage.js';
 import Exception from '../exceptions/Exception.js';
 import WebSocketRouter from './WebSocketRouter.js';
+import Logger from '../facades/Logger.js';
 import { setInterval } from 'node:timers';
 import Injectable from './Injectable.js';
 import User from '../models/User.js';
@@ -116,6 +117,7 @@ class WebSocketServerManager extends Injectable {
             webSocketMessage = this.#makeWebSocketMessageObject(client, data);
             const action = webSocketMessage.getAction();
             if ( action === '' || typeof action !== 'string' ){
+                Logger.getLogger().warn('Invalid WebSocket request action received: ' + action);
                 throw new RequestNotAcceptableHTTPException('Invalid action provided.');
             }
             const responsePayload = await this.#webSocketRouter.handle(action, webSocketMessage);
@@ -132,10 +134,12 @@ class WebSocketServerManager extends Injectable {
      * @param {Client} client
      */
     #detachClient(client){
-        if ( typeof this.#connectionIndex[client.authenticatedUserID] === 'object' ){
-            delete this.#connectionIndex[client.authenticatedUserID][client.uuid];
-            if ( Object.keys(this.#connectionIndex[client.authenticatedUserID]).length === 0 ){
-                delete this.#connectionIndex[client.authenticatedUserID];
+        const { authenticatedUserID, uuid } = client;
+        if ( typeof this.#connectionIndex[authenticatedUserID] === 'object' ){
+            Logger.getLogger().debug('Detached WebSocket client ' + uuid + ' owned by user ' + authenticatedUserID + ' from connection index.');
+            delete this.#connectionIndex[authenticatedUserID][uuid];
+            if ( Object.keys(this.#connectionIndex[authenticatedUserID]).length === 0 ){
+                delete this.#connectionIndex[authenticatedUserID];
             }
         }
     }
@@ -150,6 +154,7 @@ class WebSocketServerManager extends Injectable {
             client.on('pong', () => client.isAlive = true);
             client.uuid = crypto.randomUUID();
             client.connectionDate = new Date();
+            Logger.getLogger().debug('WebSocket connection request received (' + client.uuid + ')');
         });
     }
 
@@ -251,9 +256,11 @@ class WebSocketServerManager extends Injectable {
         if ( typeof this.#connectionIndex[user.getID()] !== 'object' ){
             this.#connectionIndex[user.getID()] = Object.create(null);
         }
-        this.#connectionIndex[user.getID()][client.uuid] = client;
+        const { uuid } = client, userID = user.getID(), logger = Logger.getLogger();
+        logger.debug('Registered WebSocket client ' + uuid + ' owned by user ' + userID);
+        this.#connectionIndex[userID][uuid] = client;
         client.authenticatedUserAccessToken = accessToken;
-        client.authenticatedUserID = user.getID();
+        client.authenticatedUserID = userID;
         client.authenticatedUser = user;
         return this;
     }
@@ -306,16 +313,18 @@ class WebSocketServerManager extends Injectable {
      * @returns {WebSocketServerManager}
      */
     runHeartbeatCheck(){
-        const currentTimestamp = new Date().getTime();
+        const currentTimestamp = new Date().getTime(), logger = Logger.getLogger();
         this.#webSocketServer.clients.forEach((client) => {
             if ( typeof client.authenticatedUserAccessToken !== 'string' ){
                 const timeDiff = currentTimestamp - client.connectionDate.getTime();
                 if ( timeDiff > WebSocketServerManager.AUTHENTICATION_WAIT_TIMEOUT ){
+                    logger.info('Disconnecting WebSocket client ' + client.uuid + ', authentication timeout.');
                     this.#detachClient(client);
                     return client.terminate();
                 }
             }
             if ( client.isAlive === false ){
+                logger.debug('Disconnecting WebSocket client ' + client.uuid + ', heartbeat check failed.');
                 this.#detachClient(client);
                 return client.terminate();
             }
@@ -351,7 +360,8 @@ class WebSocketServerManager extends Injectable {
         if ( !( user instanceof User ) ){
             throw new IllegalArgumentException('Invalid user instance.');
         }
-        const userID = user.getID();
+        const userID = user.getID(), logger = Logger.getLogger();
+        logger.debug('Disconnecting WebSocket clients authenticated as user ' + userID);
         if ( typeof this.#connectionIndex[userID] === 'object' ){
             if ( typeof accessToken === 'string' ){
                 for ( const clientID in this.#connectionIndex[userID] ){

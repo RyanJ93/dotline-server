@@ -139,11 +139,12 @@ class UserService extends Service {
      * @throws {IllegalArgumentException} If an invalid password is given.
      */
     async signup(username, password, userCompositeRSAParameters){
-        const isUsernameAvailable = await this.isUsernameAvailable(username);
-        if ( !isUsernameAvailable ){
+        if ( !( await this.isUsernameAvailable(username) ) ){
             throw new DuplicatedUsernameException('This username has already been taken.');
         }
-        return this.#user = await this.#userRepository.create(username, password, userCompositeRSAParameters);
+        this.#user = await this.#userRepository.create(username, password, userCompositeRSAParameters);
+        this._logger.info('Created new user account with username "' + username + '" and ID ' + this.#user.getID());
+        return this.#user;
     }
 
     /**
@@ -168,8 +169,10 @@ class UserService extends Service {
             throw new NotFoundHTTPException('No such user found.');
         }
         if ( !PasswordUtils.comparePassword(password, this.#user.getPassword()) ){
+            this._logger.warn('Authentication attempt with credentials failed for user ' + this.#user.getID());
             throw new UnauthorizedHTTPException('Password mismatch.');
         }
+        this._logger.info('Authentication process completed for user ' + this.#user.getID());
         return this.#user;
     }
 
@@ -183,7 +186,9 @@ class UserService extends Service {
      * @throws {IllegalArgumentException} If an invalid client tracking info instance is given.
      */
     async generateAccessToken(clientTrackingInfo){
-        return await new AccessTokenService().generateAccessToken(this.#user, clientTrackingInfo);
+        const accessToken = await new AccessTokenService().generateAccessToken(this.#user, clientTrackingInfo);
+        this._logger.info('New access token generated for user ' + this.#user.getID());
+        return accessToken;
     }
 
     /**
@@ -221,9 +226,6 @@ class UserService extends Service {
      * @throws {IllegalArgumentException} If an invalid user IDs array is given.
      */
     async findMultipleUsers(userIDList){
-        if ( !Array.isArray(userIDList) ){
-            throw new IllegalArgumentException('Invalid user IDs.');
-        }
         return await this.#userRepository.getMultipleUser(userIDList);
     }
 
@@ -250,6 +252,7 @@ class UserService extends Service {
                 throw new DuplicatedUsernameException('Username already taken.');
             }
             await this.#userRepository.updateUsername(this.#user, username);
+            this._logger.info('User ' + this.#user.getID() + ' updated.');
         }
     }
 
@@ -294,6 +297,7 @@ class UserService extends Service {
      */
     async updatePassword(password, RSAPrivateKey, RSAPrivateKeyEncryptionParameters){
         await this.#userRepository.changePassword(this.#user, password, RSAPrivateKey, RSAPrivateKeyEncryptionParameters);
+        this._logger.info('Updated password for user ' + this.#user.getID());
     }
 
     /**
@@ -310,7 +314,8 @@ class UserService extends Service {
      * @throws {IllegalArgumentException} If an invalid recovery key is given.
      */
     async regenerateRecoveryKey(recoveryRSAPrivateKeyEncryptionParameters, recoveryRSAPrivateKey, recoveryKey){
-        return await this.#userRepository.regenerateRecoveryKey(this.#user, recoveryRSAPrivateKeyEncryptionParameters, recoveryRSAPrivateKey, recoveryKey);
+        await this.#userRepository.regenerateRecoveryKey(this.#user, recoveryRSAPrivateKeyEncryptionParameters, recoveryRSAPrivateKey, recoveryKey);
+        this._logger.info('Regenerated recovery key for user ' + this.#user.getID());
     }
 
     /**
@@ -345,7 +350,9 @@ class UserService extends Service {
         if ( !PasswordUtils.comparePassword(recoveryKey, this.#user.getRecoveryKey()) ){
             throw new UnauthorizedHTTPException('Recovery key mismatch.');
         }
-        return await new UserRecoverySessionService().create(this.#user, clientTrackingInfo, ttl);
+        const userRecoverySession = await new UserRecoverySessionService().create(this.#user, clientTrackingInfo, ttl);
+        this._logger.info('Recovery session initialized for user ' + this.#user.getID());
+        return userRecoverySession;
     }
 }
 

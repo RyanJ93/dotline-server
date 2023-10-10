@@ -126,9 +126,6 @@ class ServerProvider extends Provider {
 /**
  * @constant {number}
  */
-Object.defineProperty(ServerProvider, 'DEFAULT_HTTP_PORT', {
-    value: 8888,
-    writable: false
-});
+Object.defineProperty(ServerProvider, 'DEFAULT_HTTP_PORT', { value: 8888, writable: false });
 
 export default ServerProvider;
