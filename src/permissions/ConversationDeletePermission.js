@@ -24,7 +24,7 @@ class ConversationDeletePermission extends Permission {
     async check(user, context){
         await super.check(user, context);
         const { conversation } = context, members = conversation.getMembers();
-        return members !== null && typeof members[user.getID()] !== 'undefined';
+        return members !== null && typeof members[user.getID().toString()] !== 'undefined';
     }
 }
 

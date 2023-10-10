@@ -23,7 +23,7 @@ class MessageDeletePermission extends Permission {
      */
     async check(user, context) {
         await super.check(user, context);
-        return context.message.getUser()?.getID() === user.getID();
+        return context.message.getUser()?.getID().toString() === user.getID().toString();
     }
 }
 
