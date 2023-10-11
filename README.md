@@ -2,7 +2,7 @@
 
 DotLine is an instant messaging application with end-to-end encryption support out of the box built on top of Node.js and Apache Cassandra. <br />
 DotLine supports several type of contents, such as text messages, attachments, geo positions, voice messages and stickers.  <br />
-This is the official server repository, if you are interested in DotLine client instead, head to this repository. <br />
+This is the official server repository, if you are interested in DotLine client instead, [head to this repository](https://github.com/RyanJ93/dotline-client). <br />
 Most important DotLine features:
 
 - End-to-end encryption support based on AES-256 and RSA.
