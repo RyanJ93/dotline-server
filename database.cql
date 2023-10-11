@@ -1,3 +1,5 @@
+-- Note: commented index declaration are alternative statements to use when working with DataStax Astra rather than vanilla Apache Cassandra.
+
 CREATE KEYSPACE IF NOT EXISTS dotline WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};
 
 CREATE TYPE IF NOT EXISTS attachment (id UUID, filename VARCHAR, size INT, mimetype ASCII, signature ASCII, encryption_iv ASCII);

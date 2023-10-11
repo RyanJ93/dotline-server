@@ -1,0 +1,41 @@
+{
+  // Place here your database configuration and credentials.
+  "database": {
+    // Provide the database host or IP address, multiple values can be defined.
+    "contactPoints": ["[database host]"],
+    "localDataCenter": "[datacenter name]",
+    "keyspace": "[keyspace]",
+    // Define here credentials, if needed.
+    "credentials": {
+      "username": "[username]",
+      "password": "[password]"
+    },
+    // Define here your DataStax Astra connection configuration (if you're using DataStax Astra instead of Apache Cassandra).
+    "cloud": {
+      // Path to the secure connect bundle, mind that when connecting to the database using a bundle "contactPoints" shouldn't be defined.
+      "secureConnectBundle": "[path to secureConnectBundle.zip]"
+    }
+  },
+  // Place here your redis configuration and credentials.
+  "redis": {
+    "username": "[username]",
+    "password": "[password]",
+    "hostname": "[hostname]",
+    "port": 6379,
+    "database": 0
+  },
+  // Customize some parameters client must comply to.
+  "serverParams":  {
+    // Maximum message length in characters.
+    "maxMessageLength": 10000,
+    // Maximum single attachment size in bytes.
+    "maxFileSize": 52428800,
+    // Maximum number of attachment files.
+    "maxFileCount": 20
+  },
+  // Define here your Sentry DNS in order to turn on Sentry errors tracking.
+  "sentryDSN": "[Sentry DNS]",
+  "port": 8888,
+  // Set to true to turn on verbose logging.
+  "debug": false
+}
