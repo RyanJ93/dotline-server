@@ -17,7 +17,7 @@ If you feel a little curious you can [try out DotLine here](https://dotline.enri
 
 ## Setting up your very personal IM service
 
-You can set up your personal DotLine instance using the ready-to-use Docker image available for Linux (both amd64 and arm64) [here](https://hub.docker.com/r/enricosola/dotline-server); alternatively you can simply clone this repository and follow install instruction to set up DotLine without using Docker or on your local environment to try out or customise the software.
+You can set up your personal DotLine instance using the ready-to-use Docker image available for Linux (both amd64 and arm64) [here](https://hub.docker.com/r/enricosola/dotline-server); alternatively you can simply clone this repository and follow install instruction to set up DotLine without using Docker on your local environment to try out or customise the software.
 
 ### Requirements
 
@@ -34,7 +34,7 @@ Before running the application place your configuration file in `config/config.j
 Note that the configuration file and its sample are in JSON 5 format, then feel free to use comments if you need. <br />
 Now you are ready to start your own server, you can do that simply running one of the following commands: `node index.js` or `npm start`.
 
-If you are looking for instructions for install as a Docker container refer to the [official page on Docker Hub](https://hub.docker.com/r/enricosola/dotline-server).
+If you are looking for instructions to install the software as a Docker container refer to the [official page on Docker Hub](https://hub.docker.com/r/enricosola/dotline-server).
 
 ## License
 
