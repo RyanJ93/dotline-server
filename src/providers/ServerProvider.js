@@ -4,6 +4,7 @@ import UserConversationStatusWSActionController from '../controllers/ws/UserConv
 import CheckOnlineUserWSActionController from '../controllers/ws/CheckOnlineUserWSActionController.js';
 import WebSocketServerManagerInjector from '../services/injectors/WebSocketServerManagerInjector.js';
 import AuthenticateWSActionController from '../controllers/ws/AuthenticateWSActionController.js';
+import UserProfilePictureController from '../controllers/UserProfilePictureController.js';
 import AuthenticatedMiddleware from '../middlewares/AuthenticatedMiddleware.js';
 import EventBrokerInjector from '../services/injectors/EventBrokerInjector.js';
 import ErrorHandlerMiddleware from '../middlewares/ErrorHandlerMiddleware.js';
@@ -44,10 +45,12 @@ class ServerProvider extends Provider {
         APIRouter.patch('/conversation/:conversationID/mark-as-read', MessageController.getClosure('markAsRead'));
         APIRouter.delete('/conversation/:conversationID/delete', ConversationController.getClosure('delete'));
         APIRouter.patch('/user/regenerate-recovery-key', UserController.getClosure('regenerateRecoveryKey'));
+        APIRouter.delete('/user/profile-picture/remove', UserProfilePictureController.getClosure('remove'));
         APIRouter.post('/conversation/:conversationID/message/send', MessageController.getClosure('send'));
         APIRouter.get('/conversation/:conversationID/message/list', MessageController.getClosure('list'));
         APIRouter.delete('/user/session/:accessToken/delete', UserSessionController.getClosure('delete'));
         APIRouter.get('/sticker-pack/:stickerPackID/sticker/list', StickerController.getClosure('list'));
+        APIRouter.put('/user/profile-picture/change', UserProfilePictureController.getClosure('change'));
         APIRouter.post('/user/init-account-recovery', UserController.getClosure('initAccountRecovery'));
         APIRouter.get('/conversation/commit-stats', ConversationController.getClosure('commitStats'));
         APIRouter.get('/conversation/:conversationID/get', ConversationController.getClosure('get'));
