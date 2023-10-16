@@ -7,9 +7,11 @@ import IllegalArgumentException from '../exceptions/IllegalArgumentException.js'
 import EntityNotFoundException from '../exceptions/EntityNotFoundException.js';
 import NotFoundHTTPException from '../exceptions/NotFoundHTTPException.js';
 import UserRecoverySessionService from './UserRecoverySessionService.js';
+import UserProfilePictureService from './UserProfilePictureService.js';
 import AccessTokenService from './AccessTokenService.js';
 import PasswordUtils from '../utils/PasswordUtils.js';
 import Injector from '../facades/Injector.js';
+import cassandra from 'cassandra-driver';
 import User from '../models/User.js';
 import Service from './Service.js';
 
@@ -25,11 +27,30 @@ class UserService extends Service {
      * @throws {EntityNotFoundException} If no user matching the given username is found.
      * @throws {IllegalArgumentException} If an invalid username is given.
      */
-    static async makeFromEntity(username){
+    static async makeFromEntityByUsername(username){
         const userService = new UserService();
         await userService.getUserByUsername(username);
         if ( userService.getUser() === null ){
             throw new EntityNotFoundException('No user matching the given username found.');
+        }
+        return userService;
+    }
+
+    /**
+     * Generates an instance of this class based on the given entity's ID.
+     *
+     * @param {string} id
+     *
+     * @returns {Promise<UserService>}
+     *
+     * @throws {EntityNotFoundException} If no user matching the given ID is found.
+     * @throws {IllegalArgumentException} If an invalid ID is given.
+     */
+    static async makeFromEntity(id){
+        const userService = new UserService();
+        await userService.getUserByID(id);
+        if ( userService.getUser() === null ){
+            throw new EntityNotFoundException('No user matching the given ID found.');
         }
         return userService;
     }
@@ -245,15 +266,17 @@ class UserService extends Service {
      * @throws {IllegalArgumentException} If an invalid name is given.
      */
     async edit(username, name, surname){
+        const currentUsername = this.#user.getUsername(), userID = this.#user.getID();
         await this.#userRepository.updateOptionalInfo(this.#user, surname, name);
-        if ( this.#user.getUsername() !== username ){
+        if ( currentUsername !== username ){
             const otherUser = await this.getUserByUsername(username);
             if ( otherUser !== null ){
                 throw new DuplicatedUsernameException('Username already taken.');
             }
             await this.#userRepository.updateUsername(this.#user, username);
-            this._logger.info('User ' + this.#user.getID() + ' updated.');
+            this._logger.info('Updated username for user ' + userID + ': "' + currentUsername + '" => "' + username + '"');
         }
+        this._logger.info('User ' + userID + ' info updated.');
     }
 
     /**
@@ -353,6 +376,49 @@ class UserService extends Service {
         const userRecoverySession = await new UserRecoverySessionService().create(this.#user, clientTrackingInfo, ttl);
         this._logger.info('Recovery session initialized for user ' + this.#user.getID());
         return userRecoverySession;
+    }
+
+    /**
+     * Updates user's profile picture ID.
+     *
+     * @param {?string} path
+     *
+     * @returns {Promise<void>}
+     *
+     * @throws {IllegalArgumentException} If an invalid path is given.
+     */
+    async changeProfilePicture(path){
+        const profilePictureID = cassandra.types.TimeUuid.now(), userID = this.#user.getID();
+        await new UserProfilePictureService(this.#user).processProfilePictureFile(path, profilePictureID.toString());
+        await this.#userRepository.updateProfilePictureID(this.#user, profilePictureID);
+        this._logger.info('Updated profile picture for user ' + userID + ' (ID ' + profilePictureID + ')');
+    }
+
+    /**
+     * Removes current user profile picture.
+     *
+     * @returns {Promise<void>}
+     */
+    async removeProfilePicture(){
+        await new UserProfilePictureService(this.#user).removeProfilePicture();
+        await this.#userRepository.updateProfilePictureID(this.#user, null);
+        this._logger.info('Removed profile picture for user ' + this.#user.getID());
+    }
+
+    /**
+     * Returns the path to the user profile picture defined.
+     *
+     * @param {string} profilePictureID
+     * @param {string} format
+     * @param {boolean} [absolutePath=false]
+     *
+     * @returns {Promise<?string>}
+     *
+     * @throws {IllegalArgumentException} If an invalid or unsupported format is given.
+     * @throws {IllegalArgumentException} If an invalid profile picture ID is given.
+     */
+    async getProfilePictureFile(profilePictureID, format, absolutePath = false){
+        return await new UserProfilePictureService(this.#user).getProfilePictureFile(profilePictureID, format, absolutePath);
     }
 }
 
