@@ -38,6 +38,7 @@ class ServerProvider extends Provider {
         APIRouter.use(AuthenticatedMiddleware.getClosure());
         APIRouter.get('/conversation/:conversationID/message/:messageID/attachment/:attachmentID/get', AttachmentController.getClosure('get'));
         APIRouter.patch('/conversation/:conversationID/message/:messageID/mark-as-read', MessageController.getClosure('markAsRead'));
+        APIRouter.get('/user/:userID/profile-picture/:profilePictureID/get', UserProfilePictureController.getClosure('get'));
         APIRouter.delete('/conversation/:conversationID/message/:messageID/delete', MessageController.getClosure('delete'));
         APIRouter.get('/conversation/:conversationID/message/list-commits', MessageController.getClosure('listCommits'));
         APIRouter.patch('/conversation/:conversationID/message/:messageID/edit', MessageController.getClosure('edit'));
