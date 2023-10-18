@@ -183,7 +183,7 @@ class MessageFlagRepository extends Repository {
      */
     async createMultiple(conversation, message, user, flagList){
         MessageFlagRepository.#validateFlagListParameters(conversation, message, user, flagList);
-        await Database.batch(flagList.forEach((flag) => {
+        await Database.batch(flagList.map((flag) => {
             const messageFlag = this.#makeModelInstance(conversation, message, user, flag);
             return messageFlag.getStorageParams();
         }));

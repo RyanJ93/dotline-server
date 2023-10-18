@@ -3,6 +3,7 @@
 import IllegalArgumentException from '../exceptions/IllegalArgumentException.js';
 import MessageFlagName from '../enum/MessageFlagName.js';
 import Injector from '../facades/Injector.js';
+import UserService from './UserService.js';
 import Message from '../models/Message.js';
 import Logger from '../facades/Logger.js';
 import App from '../facades/App.js';
@@ -138,7 +139,9 @@ class MessageFlagService extends Service {
         if ( flag === '' || typeof flag !== 'string' ){
             throw new IllegalArgumentException('Invalid flag.');
         }
-        const conversation = this.#message.getConversation(), results = await Promise.all(conversation.getMembers().forEach((member) => {
+        const conversation = this.#message.getConversation(), userIDList = Object.keys(conversation.getMembers());
+        const memberList = await new UserService().findMultipleUsers(userIDList);
+        const results = await Promise.all(memberList.map((member) => {
             return this.#messageFlagRepository.getMessageFlags(conversation, this.#message, member, [flag]);
         }));
         let isFlaggedForEveryMember = true, i = 0;
