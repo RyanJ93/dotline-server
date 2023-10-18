@@ -3,6 +3,7 @@ config/*.zip
 node_modules/
 .DS_Store
 storage/
+assets/
 .idea/
 logs/
 data/
