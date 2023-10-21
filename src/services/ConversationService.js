@@ -63,9 +63,11 @@ class ConversationService extends Service {
      */
     async #processConversationMembers(conversation, authenticatedUser){
         const members = conversation.getMembers(), authenticatedUserID = authenticatedUser.getID().toString();
+        // Extract a list of every conversation member's user ID and then fetch corresponding user from the database.
         const userIDList = Object.keys(members).map((userID) => cassandra.types.TimeUuid.fromString(userID));
         const userList = await new UserService().findMultipleUsers(userIDList);
         const processedMemberList = userList.map((user) => {
+            // Don't expose member's encryption and signing key if that's not the authenticated user.
             const conversationMemberProps = { encryptionKey: null, signingKey: null, user: user };
             const currentUserID = user.getID().toString();
             conversationMemberProps.deletedAt = members[currentUserID].deleted_at ?? null;
@@ -242,16 +244,27 @@ class ConversationService extends Service {
         if ( !( user instanceof User ) ){
             throw new IllegalArgumentException('Invalid user instance.');
         }
+        const memberUserIDs = conversationMemberPlaceholderList.map((conversationMemberPlaceholder) => {
+            return conversationMemberPlaceholder.getUserID();
+        }).join(', ');
+        this._logger.debug('Creating a new conversation for the following members: ' + memberUserIDs);
         this.#conversation = null;
         if ( conversationMemberPlaceholderList.length === 2 ){
             // Conversation being created is a direct message.
             const recipientUserID = conversationMemberPlaceholderList[1].getUserID();
             const senderUserID = conversationMemberPlaceholderList[0].getUserID();
+            this._logger.debug('A DM conversation is going to be created, checking if already existing...');
             this.#conversation = await this.getDMConversationByMembers(senderUserID, recipientUserID);
+            if ( this.#conversation !== null ){
+                this._logger.debug('DM conversation found with ID ' + this.#conversation.getID() + ' for members ' + memberUserIDs);
+            }
             await this.ensureConversationMembers(true);
         }
         if ( this.#conversation === null ){
             this.#conversation = await this.#conversationRepository.create(encryptionParameters, signingParameters, conversationMemberPlaceholderList, name);
+            this._logger.info('New conversation created with ID ' + this.#conversation.getID() + ' for members ' + memberUserIDs);
+        }else{
+            this._logger.info('Conversation ' + this.#conversation.getID() + ' restored for user ' + user.getID());
         }
         await this.#processConversationMembers(this.#conversation, user);
         return this.#conversation;
@@ -266,6 +279,7 @@ class ConversationService extends Service {
      */
     async ensureConversationMembers(processDMOnly){
         if ( this.#conversation !== null && ( processDMOnly !== true || this.#conversation.isDMConversation() ) && this.#conversation.hasDeletedMembers() ){
+            this._logger.debug('Restoring members for DM conversation ID ' + this.#conversation.getID());
             await this.#conversationRepository.restoreConversationMembers(this.#conversation);
         }
     }
@@ -293,12 +307,9 @@ class ConversationService extends Service {
      *
      * @returns {Promise<void>}
      *
-     * @throws {IllegalArgumentException} If and invalid user instance is given.
+     * @throws {IllegalArgumentException} If and invalid user is given.
      */
     async notifyTyping(user){
-        if ( !( user instanceof User ) ){
-            throw new IllegalArgumentException('Invalid user instance.');
-        }
         await this.#userConversationStatusRepository.setStatus(this.#conversation, user, 'typing');
         const conversationID = this.#conversation.getID(), userID = user.getID();
         this._eventBroker.emit('userTyping', Object.keys(this.#conversation.getMembers()), conversationID, userID);
@@ -317,15 +328,19 @@ class ConversationService extends Service {
         if ( !( user instanceof User ) ){
             throw new IllegalArgumentException('Invalid user instance.');
         }
+        this._logger.debug('Deleting conversation ' + this.#conversation.getID() + ' for user ' + user.getID() + '...');
         if ( Object.keys(this.#conversation.getMembers()).length === 0 ){
+            this._logger.debug('Conversation ' + this.#conversation.getID() + ' has no member left, removing it');
             return await this.delete();
         }
+        this._logger.debug('Removing member ' + user.getID() + ' from conversation ' + this.#conversation.getID() + '...');
         await Promise.all([
             new MessageFlagService().removeConversationFlagsForUser(this.#conversation, user),
             new ConversationStatService(user).deleteCounter(this.#conversation)
         ]);
         await this.#conversationRepository.deleteMember(this.#conversation, user, true);
         this._eventBroker.emit('conversationDelete', [user.getID()], this.#conversation.getID());
+        this._logger.info('Conversation ' + this.#conversation.getID() + ' deleted for user ' + user.getID());
     }
 
     /**
@@ -334,14 +349,16 @@ class ConversationService extends Service {
      * @returns {Promise<void>}
      */
     async delete(){
+        this._logger.debug('Deleting conversation ' + this.#conversation.getID() + '...');
+        const userIDList = Object.keys(this.#conversation.getMembers());
         await Promise.all([
             new ConversationStatService().deleteMembersCounter(this.#conversation),
             new MessageService(this.#conversation).deleteConversationMessages(),
             new MessageFlagService().removeConversationFlags(this.#conversation)
         ]);
-        const userIDList = Object.keys(this.#conversation.getMembers());
         await this.#conversationRepository.delete(this.#conversation);
         this._eventBroker.emit('conversationDelete', userIDList, this.#conversation.getID());
+        this._logger.info('Conversation ' + this.#conversation.getID() + ' deleted');
         this.#conversation = null;
     }
 
@@ -359,6 +376,7 @@ class ConversationService extends Service {
             throw new IllegalArgumentException('Invalid user instance.');
         }
         await new MessageFlagService().removeConversationFlagsForUser(this.#conversation, user);
+        this._logger.info('Conversation ' + this.#conversation.getID() + ' marked as read for user ' + user.getID());
     }
 }
 

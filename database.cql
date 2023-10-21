@@ -1,3 +1,5 @@
+-- Note: commented index declaration are alternative statements to use when working with DataStax Astra rather than vanilla Apache Cassandra.
+
 CREATE KEYSPACE IF NOT EXISTS dotline WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};
 
 CREATE TYPE IF NOT EXISTS attachment (id UUID, filename VARCHAR, size INT, mimetype ASCII, signature ASCII, encryption_iv ASCII);
@@ -8,7 +10,7 @@ CREATE TYPE IF NOT EXISTS geo_location (latitude FLOAT, longitude FLOAT, text VA
 CREATE TYPE IF NOT EXISTS aes_static_parameters (mode ASCII, key_length SMALLINT);
 CREATE TYPE IF NOT EXISTS hmac_signing_parameters (hash_name ASCII);
 
-CREATE TABLE IF NOT EXISTS users (id TIMEUUID, username VARCHAR, surname VARCHAR, name VARCHAR, password FROZEN<password_cocktail>, rsa_public_key ASCII, rsa_private_key ASCII, rsa_private_key_encryption_parameters FROZEN<aes_encryption_parameters>, recovery_rsa_private_key ASCII, recovery_rsa_private_key_encryption_parameters FROZEN<aes_encryption_parameters>, recovery_key FROZEN<password_cocktail>, last_access TIMESTAMP, created_at TIMESTAMP, updated_at TIMESTAMP, PRIMARY KEY (id));
+CREATE TABLE IF NOT EXISTS users (id TIMEUUID, username VARCHAR, surname VARCHAR, name VARCHAR, password FROZEN<password_cocktail>, rsa_public_key ASCII, rsa_private_key ASCII, rsa_private_key_encryption_parameters FROZEN<aes_encryption_parameters>, recovery_rsa_private_key ASCII, recovery_rsa_private_key_encryption_parameters FROZEN<aes_encryption_parameters>, recovery_key FROZEN<password_cocktail>, profile_picture_id TIMEUUID, last_access TIMESTAMP, created_at TIMESTAMP, updated_at TIMESTAMP, PRIMARY KEY (id));
 -- CREATE CUSTOM INDEX IF NOT EXISTS users_by_username ON users (username) USING 'StorageAttachedIndex';
 CREATE CUSTOM INDEX IF NOT EXISTS users_by_username ON users (username) USING 'org.apache.cassandra.index.sasi.SASIIndex';
 

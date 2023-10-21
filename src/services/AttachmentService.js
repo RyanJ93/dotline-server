@@ -94,12 +94,15 @@ class AttachmentService extends Service {
      * @returns {Promise<void>}
      */
     async removeAttachments(){
+        this._logger.debug('Removing attachments for message ID ' + this.#message.getID() + '...');
         const basePath = await this.#getAttachmentDirectory() + '/';
         if ( Array.isArray(this.#message.getAttachments()) ){
             await Promise.all(this.#message.getAttachments().map((attachment) => {
+                this._logger.debug('Removed attachment ' + attachment.id + 'for message ID ' + this.#message.getID());
                 return fs.promises.unlink(basePath + '/' + attachment.id + '.enc');
             }));
         }
+        this._logger.info('Removed attachments for message ID ' + this.#message.getID());
     }
 
     /**
@@ -143,6 +146,8 @@ class AttachmentService extends Service {
         relativePath += '/' + this.#message.getID() + '/' + attachmentID + '.enc';
         const absolutePath = path.resolve(relativePath);
         if ( !fs.existsSync(absolutePath) ){
+            const message = 'Attachment having ID ' + attachmentID + ' for message ID ' + this.#message.getID();
+            this._logger.warn(message + ' expected be stored in ' + relativePath + ' but was not found.');
             throw new EntityNotFoundException('No attachment found for the given ID.');
         }
         return absolutePath;
@@ -161,27 +166,23 @@ class AttachmentService extends Service {
         if ( !( conversation instanceof Conversation ) ){
             throw new IllegalArgumentException('Invalid conversation.');
         }
+        this._logger.debug('Removing attachments for conversation ID ' + conversation.getID() + '...');
         const path = './storage/attachments/' + conversation.getID();
         if ( fs.existsSync(path) ){
             await fs.promises.rm(path, { recursive: true, force: true });
         }
+        this._logger.info('Removed attachments for conversation ID ' + conversation.getID());
     }
 }
 
 /**
  * @constant {number}
  */
-Object.defineProperty(AttachmentService, 'MAX_FILE_SIZE', {
-    value: 52428800,
-    writable: false
-});
+Object.defineProperty(AttachmentService, 'MAX_FILE_SIZE', { value: 52428800, writable: false });
 
 /**
  * @constant {number}
  */
-Object.defineProperty(AttachmentService, 'MAX_FILE_COUNT', {
-    value: 20,
-    writable: false
-});
+Object.defineProperty(AttachmentService, 'MAX_FILE_COUNT', { value: 20, writable: false });
 
 export default AttachmentService;

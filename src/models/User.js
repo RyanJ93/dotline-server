@@ -21,6 +21,7 @@ class User extends SearchEnabledModel {
                 recoveryRSAPrivateKey: { name: 'recovery_rsa_private_key', type: 'string' },
                 recoveryKey: { name: 'recovery_key', UDTImplementation: PasswordCocktail },
                 password: { name: 'password', UDTImplementation: PasswordCocktail },
+                profilePictureID: { name: 'profile_picture_id', type: 'timeuuid' },
                 RSAPrivateKey: { name: 'rsa_private_key', type: 'string' },
                 RSAPublicKey: { name: 'rsa_public_key', type: 'string' },
                 lastAccess: { name: 'last_access', type: 'date' },
@@ -113,6 +114,15 @@ class User extends SearchEnabledModel {
 
     getRecoveryKey(){
         return this._attributes.recoveryKey ?? null;
+    }
+
+    setProfilePictureID(profilePictureID){
+        this._attributes.profilePictureID = profilePictureID;
+        return this;
+    }
+
+    getProfilePictureID(){
+        return this._attributes.profilePictureID ?? null;
     }
 
     setLastAccess(lastAccess){

@@ -12,8 +12,7 @@ class ConfigProvider extends Provider {
      * @returns {Promise<void>}
      */
     async run(){
-        const configLoader = ConfigLoader.getDefaultConfigLoader();
-        const config = await configLoader.loadConfig();
+        const config = await ConfigLoader.getDefaultConfigLoader().loadConfig();
         InjectionManager.getInstance().register('config', new ConfigInjector(config));
     }
 }

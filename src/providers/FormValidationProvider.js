@@ -5,6 +5,7 @@ import FormValidationRuleFactoryInjector from '../services/injectors/FormValidat
 import StringLengthFormValidationRule from '../forms/validationRules/StringLengthFormValidationRule.js';
 import ArrayLengthFormValidationRule from '../forms/validationRules/ArrayLengthFormValidationRule.js';
 import UsernameFormValidationRule from '../forms/validationRules/UsernameFormValidationRule.js';
+import MIMETypeFormValidationRule from '../forms/validationRules/MIMETypeFormValidationRule.js';
 import FileSizeFormValidationRule from '../forms/validationRules/FileSizeFormValidationRule.js';
 import BooleanFormValidationRule from '../forms/validationRules/BooleanFormValidationRule.js';
 import IntegerFormValidationRule from '../forms/validationRules/IntegerFormValidationRule.js';
@@ -25,6 +26,7 @@ class FormValidationProvider extends Provider {
         formValidationRuleFactory.registerFormValidationRule('non-empty-string', NotEmptyStringFormValidationRule);
         formValidationRuleFactory.registerFormValidationRule('string-length', StringLengthFormValidationRule);
         formValidationRuleFactory.registerFormValidationRule('array-length', ArrayLengthFormValidationRule);
+        formValidationRuleFactory.registerFormValidationRule('mime-type', MIMETypeFormValidationRule);
         formValidationRuleFactory.registerFormValidationRule('file-size', FileSizeFormValidationRule);
         formValidationRuleFactory.registerFormValidationRule('username', UsernameFormValidationRule);
         formValidationRuleFactory.registerFormValidationRule('boolean', BooleanFormValidationRule);

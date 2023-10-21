@@ -15,8 +15,8 @@ import UserSearchHTTPForm from '../forms/UserSearchHTTPForm.js';
 import UserLoginHTTPForm from '../forms/UserLoginHTTPForm.js';
 import UserEditHTTPForm from '../forms/UserEditHTTPForm.js';
 import UserService from '../services/UserService.js';
-import Controller from './Controller.js';
 import StringUtils from '../utils/StringUtils.js';
+import Controller from './Controller.js';
 
 class UserController extends Controller {
     /**
@@ -147,7 +147,7 @@ class UserController extends Controller {
     async initAccountRecovery(){
         new UserInitAccountRecoveryHTTPForm().validate(this._request.body);
         const clientTrackingInfo = await new ClientTrackingService().getClientTrackingInfoByHTTPRequest(this._request);
-        const { username, recoveryKey } = this._request.body, userService = await UserService.makeFromEntity(username);
+        const { username, recoveryKey } = this._request.body, userService = await UserService.makeFromEntityByUsername(username);
         const userRecoverySession = await userService.initUserRecoverySession(recoveryKey, clientTrackingInfo);
         this._sendSuccessResponse(200, 'SUCCESS', {
             recoveryParameters: userService.getRecoveryParameters().toJSON(),

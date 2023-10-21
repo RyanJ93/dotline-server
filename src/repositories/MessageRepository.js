@@ -95,7 +95,7 @@ class MessageRepository extends CassandraRepository {
             throw new IllegalArgumentException('Invalid content.');
         }
         if ( !( user instanceof User ) ){
-            throw new IllegalArgumentException('Invalid user instance.');
+            throw new IllegalArgumentException('Invalid user.');
         }
         const message = new Message();
         message.setEncryptionIV(( content === '' ? null : encryptionIV ));

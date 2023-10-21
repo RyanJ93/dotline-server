@@ -41,10 +41,10 @@ class UserRepository extends CassandraRepository {
         user.setRecoveryRSAPrivateKeyEncryptionParameters(userCompositeRSAParameters.getRecoveryRSAPrivateKeyEncryptionParameters());
         user.setRSAPrivateKeyEncryptionParameters(userCompositeRSAParameters.getRSAPrivateKeyEncryptionParameters());
         user.setRecoveryKey(PasswordUtils.preparePasswordCocktail(userCompositeRSAParameters.getRecoveryKey()));
+        user.setPassword(PasswordUtils.preparePasswordCocktail(password)).setProfilePictureID(null);
         user.setRecoveryRSAPrivateKey(userCompositeRSAParameters.getRecoveryRSAPrivateKey());
         user.setRSAPrivateKey(userCompositeRSAParameters.getRSAPrivateKey());
         user.setRSAPublicKey(userCompositeRSAParameters.getRSAPublicKey());
-        user.setPassword(PasswordUtils.preparePasswordCocktail(password));
         user.setCreatedAt(createdAt).setUpdatedAt(createdAt);
         user.setID(cassandra.types.TimeUuid.now());
         await user.setUsername(username).save();
@@ -265,6 +265,29 @@ class UserRepository extends CassandraRepository {
         user.setRecoveryRSAPrivateKeyEncryptionParameters(recoveryRSAPrivateKeyEncryptionParameters);
         user.setRecoveryKey(PasswordUtils.preparePasswordCocktail(recoveryKey));
         user.setRecoveryRSAPrivateKey(recoveryRSAPrivateKey);
+        user.setUpdatedAt(new Date());
+        await user.save();
+    }
+
+    /**
+     * Updates user's profile picture ID.
+     *
+     * @param {User} user
+     * @param {?TimeUuid} profilePictureID
+     *
+     * @returns {Promise<void>}
+     *
+     * @throws {IllegalArgumentException} If an invalid profile picture ID is given.
+     * @throws {IllegalArgumentException} If an invalid user is given.
+     */
+    async updateProfilePictureID(user, profilePictureID){
+        if ( profilePictureID !== null && !( profilePictureID instanceof cassandra.types.TimeUuid ) ){
+            throw new IllegalArgumentException('Invalid profile picture ID.');
+        }
+        if ( !( user instanceof User ) ){
+            throw new IllegalArgumentException('Invalid user.');
+        }
+        user.setProfilePictureID(profilePictureID);
         user.setUpdatedAt(new Date());
         await user.save();
     }

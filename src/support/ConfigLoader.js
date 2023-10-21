@@ -68,16 +68,16 @@ class ConfigLoader {
             return JSON5.parse(contents.toString());
         }catch(ex){
             if ( ex.code === 'ENOENT' ){
-                throw new MisconfigurationException('Configuration file not found in '+this.#configFilePath);
+                throw new MisconfigurationException('Configuration file not found in ' + this.#configFilePath);
             }
             throw ex;
         }
     }
 }
 
-Object.defineProperty(ConfigLoader, 'DEFAULT_CONFIG_FILE_PATH', {
-    value: './config/config.json',
-    writable: false
-});
+/**
+ * @constant {string}
+ */
+Object.defineProperty(ConfigLoader, 'DEFAULT_CONFIG_FILE_PATH', { value: './config/config.json', writable: false });
 
 export default ConfigLoader;

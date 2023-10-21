@@ -88,6 +88,7 @@ class AccessTokenService extends Service {
      */
     async generateAccessToken(user, clientTrackingInfo){
         const accessTokenString = CryptoUtils.generateRandomString(AccessTokenService.ACCESS_TOKEN_STRING_LENGTH);
+        this._logger.info('New access token generated for user ID ' + user.getID());
         return this.#accessToken = await this.#accessTokenRepository.createAccessToken(user, accessTokenString, clientTrackingInfo);
     }
 
@@ -142,6 +143,7 @@ class AccessTokenService extends Service {
      */
     async delete(){
         const user = this.#accessToken.getUser(), accessToken = this.#accessToken.getAccessToken();
+        // Disconnect all the active WebSocket clients authenticated though the access token being removed.
         this.#webSocketServerManager.disconnectByUser(user, accessToken, 1000, 'ERR_UNAUTHORIZED');
         await this.#accessTokenRepository.deleteAccessToken(this.#accessToken);
     }
@@ -181,13 +183,18 @@ class AccessTokenService extends Service {
             throw new IllegalArgumentException('Invalid user.');
         }
         const accessTokenList = await this.#accessTokenRepository.listByUser(user), processes = [];
+        this._logger.debug('Removing all the other access tokens for user ID ' + user.getID() + '...');
         accessTokenList.forEach((accessToken) => {
+            // Remove every user's access tokens but the given one.
             if ( accessToken.getAccessToken() !== currentAccessTokenString ){
+                // Disconnect all the active WebSocket clients authenticated though the access token being removed.
                 this.#webSocketServerManager.disconnectByUser(user, accessToken.getAccessToken(), 1000, 'ERR_UNAUTHORIZED');
+                this._logger.debug('Sent disconnection signal to all the active WebSocket clients for user ID ' + user.getID());
                 processes.push(this.#accessTokenRepository.deleteAccessTokenByString(accessToken.getAccessToken()));
             }
         });
         await Promise.all(processes);
+        this._logger.info('Removed all the other access tokens for user ID ' + user.getID());
     }
 }
 
