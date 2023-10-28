@@ -121,7 +121,7 @@ class UserProfilePictureService extends Service {
         if ( profilePictureID === '' || typeof profilePictureID !== 'string' ){
             throw new IllegalArgumentException('Invalid profile picture ID.');
         }
-        let profilePicturePath = null, currentProfilePictureID = this.#user.getProfilePictureID().toString();
+        let profilePicturePath = null, currentProfilePictureID = this.#user.getProfilePictureID()?.toString() ?? null;
         if ( currentProfilePictureID !== null && currentProfilePictureID.toString() === profilePictureID ){
             const baseStorageDirectory = await this.#getStorageDirectory();
             if ( fs.existsSync(baseStorageDirectory + '/' + profilePictureID + '.' + format) ){
