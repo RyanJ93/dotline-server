@@ -25,6 +25,7 @@
         "express-busboy": "^9.0.0",
         "json5": "^2.2.3",
         "mime-types": "^2.1.35",
+        "open-graph-scraper": "^6.3.2",
         "redis": "^4.6.5",
         "sharp": "^0.32.6",
         "ua-parser-js": "^1.0.33",
