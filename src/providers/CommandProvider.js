@@ -2,6 +2,7 @@
 
 import CreateStickerPackCommand from '../commands/CreateStickerPackCommand.js';
 import CreateStickerCommand from '../commands/CreateStickerCommand.js';
+import DatabasePingCommand from '../commands/DatabasePingCommand.js';
 import Provider from './Provider.js';
 
 class CommandProvider extends Provider {
@@ -29,6 +30,7 @@ class CommandProvider extends Provider {
     async run(){
         CreateStickerPackCommand.configure(this.#command);
         CreateStickerCommand.configure(this.#command);
+        DatabasePingCommand.configure(this.#command);
     }
 }
 
