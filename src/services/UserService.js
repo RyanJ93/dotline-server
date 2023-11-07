@@ -269,7 +269,7 @@ class UserService extends Service {
         const currentUsername = this.#user.getUsername(), userID = this.#user.getID();
         await this.#userRepository.updateOptionalInfo(this.#user, surname, name);
         if ( currentUsername !== username ){
-            const otherUser = await this.getUserByUsername(username);
+            const otherUser = await new UserService().getUserByUsername(username);
             if ( otherUser !== null ){
                 throw new DuplicatedUsernameException('Username already taken.');
             }

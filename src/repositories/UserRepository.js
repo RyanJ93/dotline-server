@@ -5,9 +5,9 @@ import UserCompositeRSAParameters from '../DTOs/UserCompositeRSAParameters.js';
 import AESEncryptionParameters from '../DTOs/AESEncryptionParameters.js';
 import CassandraRepository from './CassandraRepository.js';
 import PasswordUtils from '../utils/PasswordUtils.js';
+import StringUtils from '../utils/StringUtils.js';
 import cassandra from 'cassandra-driver';
 import User from '../models/User.js';
-import StringUtils from '../utils/StringUtils.js';
 
 class UserRepository extends CassandraRepository {
     /**
