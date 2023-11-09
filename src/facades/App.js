@@ -72,11 +72,17 @@ class App extends Facade {
 
     /**
      * Shuts the application down.
+     *
+     * @param {boolean} [silent=false]
      */
-    static shutdown(){
-        console.log('Shutting down the application...');
+    static shutdown(silent = false){
+        if ( silent !== true ){
+            console.log('Shutting down the application...');
+        }
         process.emit('applicationShutdown');
-        console.log('Application stopped!');
+        if ( silent !== true ){
+            console.log('Application stopped!');
+        }
         process.exit();
     }
 }

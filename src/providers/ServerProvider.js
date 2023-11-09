@@ -17,6 +17,7 @@ import AttachmentController from '../controllers/AttachmentController.js';
 import MessageController from '../controllers/MessageController.js';
 import StickerController from '../controllers/StickerController.js';
 import ServerController from '../controllers/ServerController.js';
+import LinkController from '../controllers/LinkController.js';
 import UserController from '../controllers/UserController.js';
 import InjectionManager from '../support/InjectionManager.js';
 import WebSocketRouter from '../support/WebSocketRouter.js';
@@ -53,6 +54,7 @@ class ServerProvider extends Provider {
         APIRouter.get('/sticker-pack/:stickerPackID/sticker/list', StickerController.getClosure('list'));
         APIRouter.put('/user/profile-picture/change', UserProfilePictureController.getClosure('change'));
         APIRouter.post('/user/init-account-recovery', UserController.getClosure('initAccountRecovery'));
+        APIRouter.get('/fetch-link-og-properties', LinkController.getClosure('fetchLinkOGProperties'));
         APIRouter.get('/conversation/commit-stats', ConversationController.getClosure('commitStats'));
         APIRouter.get('/conversation/:conversationID/get', ConversationController.getClosure('get'));
         APIRouter.delete('/user/session/delete-all', UserSessionController.getClosure('deleteAll'));
